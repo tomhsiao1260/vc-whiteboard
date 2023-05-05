@@ -33,6 +33,7 @@
         import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
         import { NRRDLoader } from 'three/addons/loaders/NRRDLoader.js';
         import { VolumeRenderShader1 } from 'three/addons/shaders/VolumeShader.js';
+        import { InkLabelShader } from 'three/addons/shaders/InkLabelShader.js';
         import WebGL from 'three/addons/capabilities/WebGL.js';
 
         if ( WebGL.isWebGL2Available() === false ) {
@@ -47,7 +48,9 @@
             controls,
             material,
             volconfig,
-            cmtextures;
+            cmtextures,
+            labMaterial1,
+            labMaterial2;
 
         init();
 
@@ -65,15 +68,15 @@
             const h = 512; // frustum height
             const aspect = window.innerWidth / window.innerHeight;
             camera = new THREE.OrthographicCamera( - h * aspect / 2, h * aspect / 2, h / 2, - h / 2, 1, 1000 );
-            camera.position.set( - 64, - 64, 128 );
-            camera.up.set( 0, 0, 1 ); // In our data, z is up
+            camera.position.set(100, 0, 0 );
+            camera.up.set( 0, -1, 0 );
 
             // Create controls
             controls = new OrbitControls( camera, renderer.domElement );
             controls.addEventListener( 'change', render );
-            controls.target.set( 64, 64, 128 );
+            controls.target.set(0, 0, 0);
             controls.minZoom = 0.5;
-            controls.maxZoom = 4;
+            controls.maxZoom = 10;
             controls.enablePan = false;
             controls.update();
 
@@ -83,16 +86,19 @@
             // let dirLight = new DirectionalLight( 0xffffff );
 
             // The gui for interaction
-            volconfig = { clim1: 0, clim2: 1, renderstyle: 'iso', isothreshold: 0.15, colormap: 'viridis' };
+            volconfig = { clim1: 0, clim2: 1, renderstyle: 'iso', isothreshold: 0.15, colormap: 'viridis', label: 0.7 };
             const gui = new GUI();
             gui.add( volconfig, 'clim1', 0, 1, 0.01 ).onChange( updateUniforms );
             gui.add( volconfig, 'clim2', 0, 1, 0.01 ).onChange( updateUniforms );
             gui.add( volconfig, 'colormap', { gray: 'gray', viridis: 'viridis' } ).onChange( updateUniforms );
             gui.add( volconfig, 'renderstyle', { mip: 'mip', iso: 'iso' } ).onChange( updateUniforms );
             gui.add( volconfig, 'isothreshold', 0, 1, 0.01 ).onChange( updateUniforms );
+            gui.add( volconfig, 'label', 0, 1, 0.01 ).onChange( updateUniforms );
+
 
             // Load the data ...
             new NRRDLoader().load( 'models/data.nrrd', function ( volume ) {
+            // new NRRDLoader().load( 'models/stent.nrrd', function ( volume ) {
 
                 // Texture to hold the volume. We have scalars, so we put our data in the red channel.
                 // THREEJS will select R32F (33326) based on the THREE.RedFormat and THREE.FloatType.
@@ -134,8 +140,54 @@
                 const geometry = new THREE.BoxGeometry( volume.xLength, volume.yLength, volume.zLength );
                 geometry.translate( volume.xLength / 2 - 0.5, volume.yLength / 2 - 0.5, volume.zLength / 2 - 0.5 );
 
+                const scale = 0.3;
+
                 const mesh = new THREE.Mesh( geometry, material );
+                mesh.scale.set( scale, scale, scale );
+                mesh.position.set( -volume.xLength * scale / 2.0, -volume.yLength * scale / 2.0, -volume.zLength * scale / 2.0 );
                 scene.add( mesh );
+
+                // Label textures
+                const labtextures = {
+                    label: new THREE.TextureLoader().load( 'textures/inklabels.png', render )
+                };
+
+                // Material
+                const labShader = InkLabelShader;
+                const labUniforms = THREE.UniformsUtils.clone( labShader.uniforms );
+
+                labUniforms[ 'u_alpha' ].value = volconfig.label;
+                labUniforms[ 'u_labdata' ].value = labtextures[ 'label' ];
+
+                labMaterial1 = new THREE.ShaderMaterial( {
+                    transparent: true,
+                    uniforms: labUniforms,
+                    vertexShader: labShader.vertexShader,
+                    fragmentShader: labShader.fragmentShader,
+                    side: THREE.BackSide
+                } );
+
+                labMaterial2 = new THREE.ShaderMaterial( {
+                    transparent: true,
+                    uniforms: labUniforms,
+                    vertexShader: labShader.vertexShader,
+                    fragmentShader: labShader.fragmentShader,
+                    side: THREE.FrontSide
+                } );
+
+                const labGeometry = new THREE.PlaneGeometry(volume.zLength, volume.yLength, 1, 1);
+                const labMesh1 = new THREE.Mesh( labGeometry, labMaterial1 );
+                const labMesh2 = new THREE.Mesh( labGeometry, labMaterial2 );
+
+                labMesh1.scale.set( scale, scale, scale );
+                labMesh1.rotation.set(0, 3.1415926 / 2, 3.1415926);
+                labMesh1.position.set(-volume.xLength * scale / 2, 0, 0);
+
+                labMesh2.scale.set( scale, scale, scale );
+                labMesh2.rotation.set(0, 3.1415926 / 2, 3.1415926);
+                labMesh2.position.set(volume.xLength * scale / 2, 0, 0);
+
+                scene.add( labMesh1, labMesh2 );
 
                 render();
 
@@ -151,6 +203,9 @@
             material.uniforms[ 'u_renderstyle' ].value = volconfig.renderstyle == 'mip' ? 0 : 1; // 0: MIP, 1: ISO
             material.uniforms[ 'u_renderthreshold' ].value = volconfig.isothreshold; // For ISO renderstyle
             material.uniforms[ 'u_cmdata' ].value = cmtextures[ volconfig.colormap ];
+
+            labMaterial1.uniforms[ 'u_alpha' ].value = volconfig.label;
+            labMaterial2.uniforms[ 'u_alpha' ].value = volconfig.label;
 
             render();
 
