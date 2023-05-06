@@ -4,6 +4,10 @@
 A web-based volumetric renderer for <a href="https://scrollprize.org/" target="_blank">Vesuvius Challenge</a>
 <h3/>
 
+<p align="center">
+    <img src="https://user-images.githubusercontent.com/31985811/236626955-a3300d98-212d-444f-99ec-3725164c0ac9.gif" width="800px"/>
+</p>
+
 ## Introduction
 
 This is a web-based volumetric renderer which you can visualize the scroll data from Vesuvius Challenge on the top of [Three.js library](https://threejs.org/).
