@@ -33,7 +33,7 @@ pip install -r requirements.txt
 
 ## Getting Started
 
-Now, we need to give this repo the data you want to see. There's a file called `convert.py` for converting the `.tif` data into `.nrrd` format which can be used for rendering via this application. Let's create a folder called `res` in root directory. Put `inklabels.png` and a folder called `surface_volume` in it. The latter one contains all the `.tif` data. 
+Now, we need to give this repo the data you want to see. There's a file called `convert.py` for converting the `.tif` data into `.nrrd` format which can be used for rendering via this application. In root directory, there's a folder called `res`. Let's put our `inklabels.png` and a folder called `surface_volume` in it. The latter one contains all the `.tif` data. 
 
 ```python
 LABEL_DIR = './res/inklabels.png'
@@ -46,10 +46,10 @@ In `convert.py`, choose a rectangular part in `inklabels.png` that you want to v
 rect = { 'x': 1100, 'y': 3500, 'w': 700, 'h': 950 }
 ```
 
-Then, run the bash file in root directory. It may take a while. Once finished, you will find a `data.nrrd` and a cropped `inklabels.png` image generated in `./res/output/` folder.
+Then, run the python script. It may take a while. Once finished, you will find a `data.nrrd` and a cropped `inklabels.png` image generated in `./res/output/` folder.
 
-```bash
-bash convert.sh
+```python
+python convert.py
 ```
 
 Now, eveything is set. Let's serve this web application and navigate to http://localhost:8000. It may take a few seconds to load assets, but hopefully you can see the results. Have fun :p

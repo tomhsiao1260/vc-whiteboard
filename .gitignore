@@ -6,4 +6,7 @@ env/
 res/
 __pycache__/
 
+/res/*
+!/res/.gitkeep
+
 client/textures/inklabels.png

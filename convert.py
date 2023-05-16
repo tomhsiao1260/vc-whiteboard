@@ -1,3 +1,5 @@
+import os
+import shutil
 import glob
 import nrrd
 import numpy as np
@@ -13,6 +15,11 @@ CROP_LABEL_DIR = './res/output/' + 'inklabels.png'
 NPZ_DIR        = './res/output/' + 'data.npz'
 NRRD_DIR       = './res/output/' + 'data.nrrd'
 
+
+if not os.path.exists('res'):
+    os.makedirs('res')
+if not os.path.exists('res/output'):
+    os.makedirs('res/output')
 
 def image_crop(LABEL_DIR, CROP_LABEL_DIR, rect):
     image = Image.open(LABEL_DIR)
@@ -52,3 +59,7 @@ image_crop(LABEL_DIR, CROP_LABEL_DIR, rect)
 write_npz(NPZ_DIR, TIF_DIR, rect)
 # generate .nrrd file from .npz file
 write_nrrd(NRRD_DIR, read_npz(NPZ_DIR, 'image_stack'))
+
+# Copy the generated files to the client folder
+shutil.copy(NRRD_DIR , 'client/models')
+shutil.copy(CROP_LABEL_DIR , 'client/textures')
