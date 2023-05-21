@@ -40,10 +40,11 @@ LABEL_DIR = './res/inklabels.png'
 TIF_DIR   = './res/surface_volume/*.tif'
 ```
 
-In `convert.py`, choose a rectangular part in `inklabels.png` that you want to visualize. The origin starts at the top left. The `x`, `y` refer to the top left coordinates of the selection rectangle. The `w`, `h` refer to its width and height.
+In `convert.py`, choose a rectangular part in `inklabels.png` that you want to visualize. The origin starts at the top left. The `x`, `y` refer to the top left coordinates of the selection rectangle. The `w`, `h` refer to its width and height. If you only want to see certain layers, you can also add a starting layer `z` and the layers number `d`.
 
 ```python
-rect = { 'x': 1100, 'y': 3500, 'w': 700, 'h': 950 }
+clip = { 'x': 1100, 'y': 3500, 'w': 700, 'h': 950 }
+clip = { 'x': 1100, 'y': 3500, 'z': 10, 'w': 700, 'h': 950, 'd': 30 }
 ```
 
 Then, run the python script. It may take a while. Once finished, you will find a `data.nrrd` and a cropped `inklabels.png` image generated in `./res/output/` folder.

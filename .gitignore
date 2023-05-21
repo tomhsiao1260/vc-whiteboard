@@ -3,7 +3,6 @@
 *.npz
 
 env/
-res/
 __pycache__/
 
 /res/*

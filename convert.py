@@ -6,7 +6,8 @@ import numpy as np
 from PIL import Image
 from tqdm import tqdm
 
-rect = { 'x': 1100, 'y': 3500, 'w': 700, 'h': 950 }
+clip = { 'x': 1100, 'y': 3500, 'w': 700, 'h': 950 }
+# clip = { 'x': 1100, 'y': 3500, 'z': 10, 'w': 700, 'h': 950, 'd': 30 }
 
 LABEL_DIR      = './res/inklabels.png'
 TIF_DIR        = './res/surface_volume/*.tif'
@@ -21,10 +22,10 @@ if not os.path.exists('res'):
 if not os.path.exists('res/output'):
     os.makedirs('res/output')
 
-def image_crop(LABEL_DIR, CROP_LABEL_DIR, rect):
+def image_crop(LABEL_DIR, CROP_LABEL_DIR, clip):
     image = Image.open(LABEL_DIR)
 
-    cropped = image.crop((rect['x'], rect['y'], rect['x']+rect['w'], rect['y']+rect['h']))
+    cropped = image.crop((clip['x'], clip['y'], clip['x']+clip['w'], clip['y']+clip['h']))
     cropped.save(CROP_LABEL_DIR)
 
 def read_npz(NPZ_DIR, key):
@@ -33,12 +34,21 @@ def read_npz(NPZ_DIR, key):
 
     return array
 
-def write_npz(NPZ_DIR, TIF_DIR, rect):
+def write_npz(NPZ_DIR, TIF_DIR, clip):
     names = sorted(glob.glob(TIF_DIR))
-    image_stack = np.zeros((len(names), rect['h'], rect['w']), dtype=np.float32)
+
+    if 'z' in clip:
+        start = clip['z']
+        if 'd' in clip:
+            end = start + clip['d']
+            names = names[start:end]
+        else:
+            names = names[start:]
+
+    image_stack = np.zeros((len(names), clip['h'], clip['w']), dtype=np.float32)
 
     for i, filename in enumerate(tqdm(names)):
-        image = np.array(Image.open(filename), dtype=np.float32)[rect['y']:(rect['y']+rect['h']), rect['x']:(rect['x']+rect['w'])]
+        image = np.array(Image.open(filename), dtype=np.float32)[clip['y']:(clip['y']+clip['h']), clip['x']:(clip['x']+clip['w'])]
         image /= 65535.0
         image_stack[i] = image
 
@@ -54,9 +64,9 @@ def write_nrrd(NRRD_DIR, data):
 
 
 # generate cropped inklabel image
-image_crop(LABEL_DIR, CROP_LABEL_DIR, rect)
+image_crop(LABEL_DIR, CROP_LABEL_DIR, clip)
 # generate .npz file from .tif files
-write_npz(NPZ_DIR, TIF_DIR, rect)
+write_npz(NPZ_DIR, TIF_DIR, clip)
 # generate .nrrd file from .npz file
 write_nrrd(NRRD_DIR, read_npz(NPZ_DIR, 'image_stack'))
 
