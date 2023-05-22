@@ -173,7 +173,8 @@ function rebuildGUI() {
 
     const displayFolder = gui.addFolder('display')
     displayFolder
-      .add(params, 'mode', ['geometry', 'raymarching', 'layer', 'grid layers', 'volume'])
+      .add(params, 'mode', ['volume', 'layer', 'grid layers'])
+      // .add(params, 'mode', ['geometry', 'raymarching', 'layer', 'grid layers', 'volume'])
       .onChange(() => {
         rebuildGUI()
       })
@@ -199,6 +200,7 @@ function rebuildGUI() {
         displayFolder.add(volconfig, 'renderstyle', ['mip', 'iso'])
         displayFolder.add(volconfig, 'clim1', 0, 1)
         displayFolder.add(volconfig, 'clim2', 0, 1)
+        displayFolder.add(params, 'surface', -0.2, 2.0)
         displayFolder.add(volconfig, 'renderthreshold', 0, 1)
     }
 }
@@ -341,6 +343,8 @@ function render() {
         const texture = cmtextures[ volconfig.colormap ]
         if (texture) volumePass.material.uniforms.cmdata.value = texture
 
+        volumePass.material.uniforms.sdfTex.value = sdfTex.texture;
+        volumePass.material.uniforms.surface.value = params.surface;
         volumePass.material.uniforms.clim.value.set( volconfig.clim1, volconfig.clim2 );
         volumePass.material.uniforms.renderstyle.value = volconfig.renderstyle == 'mip' ? 0 : 1; // 0: MIP, 1: ISO
         volumePass.material.uniforms.renderthreshold.value = volconfig.renderthreshold; // For ISO renderstyle
