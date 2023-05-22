@@ -6,10 +6,10 @@ import numpy as np
 from PIL import Image
 from tqdm import tqdm
 
-clip = { 'x': 0, 'y': 0, 'z': 0, 'w': 249, 'h': 85, 'd': 100 }
+clip = { 'x': 250, 'y': 250, 'z': 0, 'w': 160, 'h': 147, 'd': 65 }
 
-# VOLUME_ID      = '20230205180739'
-VOLUME_ID      = 'pseudo'
+VOLUME_ID      = '20230205180739'
+# VOLUME_ID      = 'pseudo'
 SEGMENT_ID     = '20230503225234'
 
 TIF_DIR        = f'./example.volpkg/volumes_small/{VOLUME_ID}/*.tif'
@@ -40,12 +40,12 @@ def write_npz(NPZ_DIR, TIF_DIR, clip):
         else:
             names = names[start:]
 
-    image_stack = np.zeros((len(names), clip['h'], clip['w']), dtype=np.float32)
+    image_stack = np.zeros((clip['w'], clip['h'], len(names)), dtype=np.float32)
 
     for i, filename in enumerate(tqdm(names)):
         image = np.array(Image.open(filename), dtype=np.float32)[clip['y']:(clip['y']+clip['h']), clip['x']:(clip['x']+clip['w'])]
         image /= 65535.0
-        image_stack[i] = image
+        image_stack[:, :, i] = np.transpose(image, (1, 0))
 
     np.savez(NPZ_DIR, image_stack=image_stack)
 
@@ -113,6 +113,8 @@ def processing(vertices, normals, uvs, faces):
     # translate & rescale
     p_vertices = (vertices - mean_vertices) / np.amax(bounding_box)
     p_vertices = np.around(p_vertices, decimals=5)
+
+    # print(mean_vertices, bounding_box)
 
     return p_vertices, p_normals, p_uvs, p_faces
 
