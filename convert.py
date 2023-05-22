@@ -6,27 +6,22 @@ import numpy as np
 from PIL import Image
 from tqdm import tqdm
 
-clip = { 'x': 1100, 'y': 3500, 'w': 700, 'h': 950 }
-# clip = { 'x': 1100, 'y': 3500, 'z': 10, 'w': 700, 'h': 950, 'd': 30 }
+clip = { 'x': 0, 'y': 0, 'z': 0, 'w': 249, 'h': 85, 'd': 100 }
 
-LABEL_DIR      = './res/inklabels.png'
-TIF_DIR        = './res/surface_volume/*.tif'
+# VOLUME_ID      = '20230205180739'
+VOLUME_ID      = 'pseudo'
+SEGMENT_ID     = '20230503225234'
 
-CROP_LABEL_DIR = './res/output/' + 'inklabels.png'
-NPZ_DIR        = './res/output/' + 'data.npz'
-NRRD_DIR       = './res/output/' + 'data.nrrd'
+TIF_DIR        = f'./example.volpkg/volumes_small/{VOLUME_ID}/*.tif'
+OBJ_DIR        = f'./example.volpkg/paths/{SEGMENT_ID}/{SEGMENT_ID}.obj'
+
+NEW_OBJ_DIR    = './output/' + 'data.obj'
+NPZ_DIR        = './output/' + 'data.npz'
+NRRD_DIR       = './output/' + 'data.nrrd'
 
 
-if not os.path.exists('res'):
-    os.makedirs('res')
-if not os.path.exists('res/output'):
-    os.makedirs('res/output')
-
-def image_crop(LABEL_DIR, CROP_LABEL_DIR, clip):
-    image = Image.open(LABEL_DIR)
-
-    cropped = image.crop((clip['x'], clip['y'], clip['x']+clip['w'], clip['y']+clip['h']))
-    cropped.save(CROP_LABEL_DIR)
+if not os.path.exists('output'):
+    os.makedirs('output')
 
 def read_npz(NPZ_DIR, key):
     data = np.load(NPZ_DIR)
@@ -62,14 +57,76 @@ def write_nrrd(NRRD_DIR, data):
     # nrrd.write(NRRD_DIR, data, header)
     nrrd.write(NRRD_DIR, data)
 
+def parse_obj(filename):
+    vertices = []
+    normals = []
+    uvs = []
+    faces = []
 
-# generate cropped inklabel image
-image_crop(LABEL_DIR, CROP_LABEL_DIR, clip)
+    with open(filename, 'r') as f:
+        for line in f:
+            if line.startswith('v '):
+                vertices.append([float(x) for x in line[2:].split()])
+            elif line.startswith('vn '):
+                normals.append([float(x) for x in line[3:].split()])
+            elif line.startswith('vt '):
+                uvs.append([float(x) for x in line[3:].split()])
+            elif line.startswith('f '):
+                indices = [int(x.split('/')[0]) - 1 for x in line.split()[1:]]
+                faces.append(indices)
+
+    vertices = np.array(vertices)
+    normals = np.array(normals)
+    uvs = np.array(uvs)
+    faces = np.array(faces)
+
+    return vertices, normals, uvs, faces
+
+def save_obj(filename, vertices, normals, uvs, faces):
+    with open(filename, 'w') as f:
+
+        for i in range(len(vertices)):
+            vertex = vertices[i]
+            normal = normals[i]
+            f.write(f"v {' '.join(str(x) for x in vertex)}\n")
+            f.write(f"vn {' '.join(str(x) for x in normal)}\n")
+
+        for uv in uvs:
+            f.write(f"vt {' '.join(str(x) for x in uv)}\n")
+
+        for face in faces:
+            indices = ' '.join(f"{x+1}/{x+1}/{x+1}" for x in face)
+            f.write(f"f {indices}\n")
+
+def processing(vertices, normals, uvs, faces):
+    p_vertices = vertices
+    p_normals = normals
+    p_uvs = uvs
+    p_faces = faces
+
+    # Calculate bounding box
+    mean_vertices = np.mean(vertices, axis=0)
+    distances = np.linalg.norm(vertices - mean_vertices, axis=1)
+    farthest_vertex = vertices[np.argmax(distances)]
+    bounding_box = farthest_vertex - mean_vertices
+
+    # translate & rescale
+    p_vertices = (vertices - mean_vertices) / np.amax(bounding_box)
+    p_vertices = np.around(p_vertices, decimals=5)
+
+    return p_vertices, p_normals, p_uvs, p_faces
+
 # generate .npz file from .tif files
 write_npz(NPZ_DIR, TIF_DIR, clip)
 # generate .nrrd file from .npz file
 write_nrrd(NRRD_DIR, read_npz(NPZ_DIR, 'image_stack'))
+# read .obj file
+vertices, normals, uvs, faces = parse_obj(OBJ_DIR)
+# processing .obj data
+p_vertices, p_normals, p_uvs, p_faces = processing(vertices, normals, uvs, faces)
+# save .obj file
+save_obj(NEW_OBJ_DIR, p_vertices, p_normals, p_uvs, p_faces)
 
 # Copy the generated files to the client folder
-shutil.copy(NRRD_DIR , 'client/models')
-shutil.copy(CROP_LABEL_DIR , 'client/textures')
+shutil.copy(NRRD_DIR , 'client/public')
+shutil.copy(NEW_OBJ_DIR , 'client/public')

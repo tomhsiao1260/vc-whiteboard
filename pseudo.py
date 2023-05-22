@@ -3,13 +3,11 @@ import numpy as np
 import tifffile as tiff
 
 size = { 'w': 249, 'h': 85, 'd': 100 }
-TIF_DIR = './res/surface_volume/'
+TIF_DIR = './example.volpkg/volumes_small/pseudo/'
 
 
-if not os.path.exists('res'):
-    os.makedirs('res')
-if not os.path.exists('res/surface_volume'):
-    os.makedirs('res/surface_volume')
+if not os.path.exists(TIF_DIR):
+    os.makedirs(TIF_DIR)
 
 for i in range(size['d']):
     image = np.zeros((size['h'], size['w']), dtype=np.uint16)

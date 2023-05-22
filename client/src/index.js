@@ -101,7 +101,7 @@ function init() {
     volumePass = new FullScreenQuad(new VolumeMaterial())
 
     new OBJLoader()
-        .loadAsync('model.obj')
+        .loadAsync('data.obj')
         .then((object) => {
             const staticGen = new StaticGeometryGenerator(object)
 
@@ -124,6 +124,7 @@ function init() {
     new NRRDLoader()
         .loadAsync('data.nrrd')
         .then((volume) => {
+            console.log(volume)
 
             // THREEJS will select R32F (33326) based on the THREE.RedFormat and THREE.FloatType.
             // Also see https://www.khronos.org/registry/webgl/specs/latest/2.0/#TEXTURE_TYPES_FORMATS_FROM_DOM_ELEMENTS_TABLE
