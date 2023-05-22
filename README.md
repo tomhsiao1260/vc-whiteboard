@@ -5,7 +5,7 @@ A web-based volumetric renderer for <a href="https://scrollprize.org/" target="_
 <h3/>
 
 <p align="center">
-    <img src="https://user-images.githubusercontent.com/31985811/236626955-a3300d98-212d-444f-99ec-3725164c0ac9.gif" width="800px"/>
+    <img src="https://github.com/tomhsiao1260/volume-viewer/assets/31985811/3e2572fd-8640-435a-bf13-7a48eb45973f" width="800px"/>
 </p>
 
 ## Introduction
@@ -31,35 +31,43 @@ Install the reqired python packages
 pip install -r requirements.txt
 ```
 
+Download [Node.js](https://nodejs.org/en/download/) and install the required npm packages
+```bash
+cd client && npm install
+```
+
 ## Getting Started
 
-Now, we need to give this repo the data you want to see. There's a file called `convert.py` for converting the `.tif` data into `.nrrd` format which can be used for rendering via this application. In root directory, there's a folder called `res`. Let's put our `inklabels.png` and a folder called `surface_volume` in it. The latter one contains all the `.tif` data. 
+Now, we need to give this repo the data you want to see. There's a file called `convert.py` for converting the `.tif` data into `.nrrd` format which can be used for rendering via this application. In `convert.py`, enter your `volpkg` directory, `volume` and `segment` id info.
 
 ```python
-LABEL_DIR = './res/inklabels.png'
-TIF_DIR   = './res/surface_volume/*.tif'
+VOLUME_ID      = '20230205180739'
+SEGMENT_ID     = '20230503225234'
+    
+TIF_DIR        = f'./example.volpkg/ ...'
+OBJ_DIR        = f'./example.volpkg/ ...'
 ```
 
-In `convert.py`, choose a rectangular part in `inklabels.png` that you want to visualize. The origin starts at the top left. The `x`, `y` refer to the top left coordinates of the selection rectangle. The `w`, `h` refer to its width and height. If you only want to see certain layers, you can also add a starting layer `z` and the layers number `d`.
+Choose a clipped part that you want to visualize. `x`, `y` refer to the top left coordinates of the `.tif` file. `w`, `h` refer to clipped width and height. `z` is starting layer and `d` is layers number you want to see.
 
 ```python
-clip = { 'x': 1100, 'y': 3500, 'w': 700, 'h': 950 }
-clip = { 'x': 1100, 'y': 3500, 'z': 10, 'w': 700, 'h': 950, 'd': 30 }
+clip = { 'x': 250, 'y': 250, 'z': 0, 'w': 160, 'h': 147, 'd': 65 }
 ```
 
-Then, run the python script. It may take a while. Once finished, you will find a `data.nrrd` and a cropped `inklabels.png` image generated in `./res/output/` folder.
+Then, run the python script. It may take a while. Once finished, you will find a `data.nrrd` and a `data.obj` generated in `./output/` folder.
 
 ```python
 python convert.py
 ```
 
-Now, eveything is set. Let's serve this web application and navigate to http://localhost:8000. It may take a few seconds to load assets, but hopefully you can see the results. Have fun :p
+Now, eveything is set. Let's serve this web application and navigate to http://localhost:5173/. It may take a few seconds to load assets, but hopefully you can see the results. Have fun!
 
 ```bash
-cd client
-python -m http.server
+cd client && npm run dev
 ```
 
 ## Notes
+    
+Here's also a [git branch](https://github.com/tomhsiao1260/volume-viewer/tree/demo-1) for different visualization purpose.
 
-If you want to know more, the rendering part is modified from [this example](https://github.com/mrdoob/three.js/blob/master/examples/webgl2_materials_texture3d.html) from Three.js community. For me, Vesuvius Challenge is cool and I'll keep trying to make better tools for it, especially on the web. If you have any thoughts or issues, feel free to reach out me on [twitter](https://twitter.com/yaohsiao123) or send an issue here. I'm here to help!
+If you want to know more, the rendering part is modified from [this example](https://github.com/gkjohnson/three-mesh-bvh/blob/master/example/sdfGeneration.js) from [three-mesh-bvh](https://github.com/gkjohnson/three-mesh-bvh) and [this example](https://github.com/mrdoob/three.js/blob/master/examples/webgl2_materials_texture3d.html) from Three.js community. For me, Vesuvius Challenge is cool and I'll keep trying to make better tools for it, especially on the web. If you have any thoughts or issues, feel free to reach out me on [twitter](https://twitter.com/yaohsiao123) or send an issue here. I'm here to help!
