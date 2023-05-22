@@ -1,0 +1,19 @@
+{
+  "name": "hello",
+  "private": true,
+  "version": "0.0.0",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview"
+  },
+  "devDependencies": {
+    "vite": "^4.3.2"
+  },
+  "dependencies": {
+    "stats.js": "^0.17.0",
+    "three": "^0.152.2",
+    "three-mesh-bvh": "^0.5.24"
+  }
+}
