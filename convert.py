@@ -9,8 +9,12 @@ from tqdm import tqdm
 clip = { 'x': 250, 'y': 250, 'z': 0, 'w': 160, 'h': 147, 'd': 65 }
 
 VOLUME_ID      = '20230205180739'
-# VOLUME_ID      = 'pseudo'
 SEGMENT_ID     = '20230503225234'
+
+# clip = { 'x': 0, 'y': 0, 'z': 0, 'w': 160, 'h': 147, 'd': 65 }
+
+# VOLUME_ID      = 'pseudo'
+# SEGMENT_ID     = '20230503225234'
 
 TIF_DIR        = f'./example.volpkg/volumes_small/{VOLUME_ID}/*.tif'
 OBJ_DIR        = f'./example.volpkg/paths/{SEGMENT_ID}/{SEGMENT_ID}.obj'

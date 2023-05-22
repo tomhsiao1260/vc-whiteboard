@@ -10,7 +10,7 @@ export class VolumeMaterial extends ShaderMaterial {
       },
 
       uniforms: {
-        data: { value: null },
+        voldata: { value: null },
         cmdata: { value: null },
         size: { value: new Vector3() },
         clim: { value: new Vector2() },
@@ -33,7 +33,7 @@ export class VolumeMaterial extends ShaderMaterial {
 				varying vec2 vUv;
         uniform vec2 clim;
         uniform vec3 size;
-        uniform sampler3D data;
+        uniform sampler3D voldata;
         uniform sampler2D cmdata;
         uniform mat4 projectionInverse;
 				uniform mat4 sdfTransformInverse;
@@ -112,7 +112,7 @@ export class VolumeMaterial extends ShaderMaterial {
 
         float sample1(vec3 texcoords) {
           /* Sample float value from a 3D texture. Assumes intensity data. */
-          return texture(data, texcoords.xyz).r;
+          return texture(voldata, texcoords.xyz).r;
         }
 
         vec4 apply_colormap(float val) {

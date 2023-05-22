@@ -23,7 +23,7 @@ const params = {
 
     mode: 'volume',
     layer: 0,
-    surface: 0.018
+    surface: 1.8
 }
 
 const volconfig = {
@@ -138,7 +138,7 @@ function init() {
             volumeTex.needsUpdate = true
 
             const material = volumePass.material;
-            material.uniforms.data.value = volumeTex;
+            material.uniforms.voldata.value = volumeTex;
             material.uniforms.size.value.set( volume.xLength, volume.yLength, volume.zLength );
         })
 
@@ -165,11 +165,11 @@ function rebuildGUI() {
 
     gui = new GUI()
 
-    const generationFolder = gui.addFolder('generation')
-    generationFolder.add(params, 'gpuGeneration')
-    generationFolder.add(params, 'resolution', 10, 200, 1)
-    generationFolder.add(params, 'margin', 0, 1)
-    generationFolder.add(params, 'regenerate')
+    // const generationFolder = gui.addFolder('generation')
+    // generationFolder.add(params, 'gpuGeneration')
+    // generationFolder.add(params, 'resolution', 10, 200, 1)
+    // generationFolder.add(params, 'margin', 0, 1)
+    // generationFolder.add(params, 'regenerate')
 
     const displayFolder = gui.addFolder('display')
     displayFolder
@@ -179,11 +179,20 @@ function rebuildGUI() {
       })
 
     if (params.mode === 'layer') {
+      displayFolder.add(volconfig, 'clim1', 0, 1)
+      displayFolder.add(volconfig, 'clim2', 0, 1)
+      displayFolder.add(params, 'surface', -0.2, 2.0)
       displayFolder.add(params, 'layer', 0, params.resolution, 1)
     }
 
+    if (params.mode === 'grid layers') {
+      displayFolder.add(volconfig, 'clim1', 0, 1)
+      displayFolder.add(volconfig, 'clim2', 0, 1)
+      displayFolder.add(params, 'surface', -0.2, 2.0)
+    }
+
     if (params.mode === 'raymarching') {
-      displayFolder.add(params, 'surface', -0.2, 0.5)
+      displayFolder.add(params, 'surface', -0.2, 2.0)
     }
 
     if (params.mode === 'volume') {
@@ -286,8 +295,14 @@ function render() {
         // render a layer of the 3d texture
 		let tex;
 		const material = layerPass.material;
+        const texture = cmtextures[ volconfig.colormap ]
 
-		material.uniforms.layer.value = params.layer / sdfTex.width;
+        if (volumeTex) material.uniforms.voldata.value = volumeTex
+        if (texture) material.uniforms.cmdata.value = texture
+
+		material.uniforms.clim.value.set( volconfig.clim1, volconfig.clim2 );
+        material.uniforms.surface.value = params.surface;
+        material.uniforms.layer.value = params.layer / sdfTex.width;
         material.uniforms.layers.value = sdfTex.texture.image.width;
 		material.uniforms.sdfTex.value = sdfTex.texture;
 		tex = sdfTex.texture;
