@@ -29,8 +29,7 @@ const params = {
 const volconfig = {
     clim1: 0,
     clim2: 1,
-    renderstyle: 'mip',
-    // renderstyle: 'iso',
+    renderstyle: 'iso',
     renderthreshold: 0.15,
     colormap: 'viridis',
     label: 0.7
@@ -124,7 +123,6 @@ function init() {
     new NRRDLoader()
         .loadAsync('data.nrrd')
         .then((volume) => {
-            console.log(volume)
 
             // THREEJS will select R32F (33326) based on the THREE.RedFormat and THREE.FloatType.
             // Also see https://www.khronos.org/registry/webgl/specs/latest/2.0/#TEXTURE_TYPES_FORMATS_FROM_DOM_ELEMENTS_TABLE
@@ -212,8 +210,6 @@ function updateSDF() {
     scale.z += 2 * params.margin
     matrix.compose(center, quat, scale)
     inverseBoundsMatrix.copy(matrix).invert()
-
-    console.log(geometry.boundingBox)
 
     // update the box helper
     boxHelper.box.copy(geometry.boundingBox)
@@ -332,7 +328,7 @@ function render() {
 
         volumePass.material.uniforms.clim.value.set( volconfig.clim1, volconfig.clim2 );
         volumePass.material.uniforms.renderstyle.value = volconfig.renderstyle == 'mip' ? 0 : 1; // 0: MIP, 1: ISO
-        volumePass.material.uniforms.renderthreshold.value = volconfig.isothreshold; // For ISO renderstyle
+        volumePass.material.uniforms.renderthreshold.value = volconfig.renderthreshold; // For ISO renderstyle
         volumePass.material.uniforms.projectionInverse.value.copy( camera.projectionMatrixInverse );
 		volumePass.material.uniforms.sdfTransformInverse.value.copy( mesh.matrixWorld ).invert().premultiply( inverseBoundsMatrix ).multiply( camera.matrixWorld );
 		volumePass.render( renderer );
