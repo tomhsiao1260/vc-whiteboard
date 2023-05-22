@@ -129,6 +129,7 @@ function init() {
             // THREEJS will select R32F (33326) based on the THREE.RedFormat and THREE.FloatType.
             // Also see https://www.khronos.org/registry/webgl/specs/latest/2.0/#TEXTURE_TYPES_FORMATS_FROM_DOM_ELEMENTS_TABLE
             volumeTex = new THREE.Data3DTexture( volume.data, volume.xLength, volume.yLength, volume.zLength )
+
             volumeTex.format = THREE.RedFormat
             volumeTex.type = THREE.FloatType
             volumeTex.minFilter = THREE.LinearFilter
@@ -211,6 +212,8 @@ function updateSDF() {
     scale.z += 2 * params.margin
     matrix.compose(center, quat, scale)
     inverseBoundsMatrix.copy(matrix).invert()
+
+    console.log(geometry.boundingBox)
 
     // update the box helper
     boxHelper.box.copy(geometry.boundingBox)
