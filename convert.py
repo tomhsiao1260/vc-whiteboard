@@ -6,18 +6,16 @@ import numpy as np
 from PIL import Image
 from tqdm import tqdm
 
-clip = { 'x': 250, 'y': 250, 'z': 0, 'w': 160, 'h': 147, 'd': 65 }
-
+SCALE          = 0.1
+VOLPKG_DIR     = './example.volpkg'
 VOLUME_ID      = '20230205180739'
-SEGMENT_ID     = '20230503225234'
+SEGMENT_ID     = '20230506133355'
 
-# clip = { 'x': 0, 'y': 0, 'z': 0, 'w': 160, 'h': 147, 'd': 65 }
-
+# VOLPKG_DIR     = '../full-scrolls/Scroll1.volpkg'
 # VOLUME_ID      = 'pseudo'
-# SEGMENT_ID     = '20230503225234'
 
-TIF_DIR        = f'./example.volpkg/volumes_small/{VOLUME_ID}/*.tif'
-OBJ_DIR        = f'./example.volpkg/paths/{SEGMENT_ID}/{SEGMENT_ID}.obj'
+TIF_DIR        = f'{VOLPKG_DIR}/volumes_small/{VOLUME_ID}/*.tif'
+OBJ_DIR        = f'{VOLPKG_DIR}/paths/{SEGMENT_ID}/{SEGMENT_ID}.obj'
 
 NEW_OBJ_DIR    = './output/' + 'data.obj'
 NPZ_DIR        = './output/' + 'data.npz'
@@ -33,17 +31,27 @@ def read_npz(NPZ_DIR, key):
 
     return array
 
-def write_npz(NPZ_DIR, TIF_DIR, clip):
+def write_npz(NPZ_DIR, TIF_DIR, data):
+    c = data['mean_vertices'] * SCALE
+    b = data['bounding_box']  * SCALE
+
+    min_point = (c - b / 2).astype(int)
+    max_point = (c + b / 2).astype(int)
+    min_point[min_point < 0] = 0
+    max_point[max_point < 0] = 0
+
+    clip = {}
+    clip['x'] = min_point[0]
+    clip['y'] = min_point[1]
+    clip['z'] = min_point[2]
+    clip['w'] = max_point[0] - min_point[0]
+    clip['h'] = max_point[1] - min_point[1]
+    clip['d'] = max_point[2] - min_point[2]
+
+    print('clip: ', clip)
+
     names = sorted(glob.glob(TIF_DIR))
-
-    if 'z' in clip:
-        start = clip['z']
-        if 'd' in clip:
-            end = start + clip['d']
-            names = names[start:end]
-        else:
-            names = names[start:]
-
+    names = names[clip['z'] : clip['z'] + clip['d']]
     image_stack = np.zeros((clip['w'], clip['h'], len(names)), dtype=np.float32)
 
     for i, filename in enumerate(tqdm(names)):
@@ -79,14 +87,20 @@ def parse_obj(filename):
                 indices = [int(x.split('/')[0]) - 1 for x in line.split()[1:]]
                 faces.append(indices)
 
-    vertices = np.array(vertices)
-    normals = np.array(normals)
-    uvs = np.array(uvs)
-    faces = np.array(faces)
+    data = {}
+    data['vertices']    = np.array(vertices)
+    data['normals']     = np.array(normals)
+    data['uvs']         = np.array(uvs)
+    data['faces']       = np.array(faces)
 
-    return vertices, normals, uvs, faces
+    return data
 
-def save_obj(filename, vertices, normals, uvs, faces):
+def save_obj(filename, data):
+    vertices = data['vertices']
+    normals  = data['normals']
+    uvs      = data['uvs']
+    faces    = data['faces']
+
     with open(filename, 'w') as f:
 
         for i in range(len(vertices)):
@@ -102,36 +116,49 @@ def save_obj(filename, vertices, normals, uvs, faces):
             indices = ' '.join(f"{x+1}/{x+1}/{x+1}" for x in face)
             f.write(f"f {indices}\n")
 
-def processing(vertices, normals, uvs, faces):
-    p_vertices = vertices
+def processing(data):
+    vertices = data['vertices']
+    normals  = data['normals']
+    uvs      = data['uvs']
+    faces    = data['faces']
+
+    # calculate bounding box
+    mean_vertices = np.mean(vertices, axis=0)
+    distances = np.linalg.norm(vertices - mean_vertices, axis=1)
+    farthest_vertex = vertices[np.argmax(distances)]
+    bounding_box = 2 * np.abs(farthest_vertex - mean_vertices)
+
+    # translate & rescale
+    p_vertices = (vertices - mean_vertices) / np.amax(bounding_box)
     p_normals = normals
     p_uvs = uvs
     p_faces = faces
 
-    # Calculate bounding box
-    mean_vertices = np.mean(vertices, axis=0)
-    distances = np.linalg.norm(vertices - mean_vertices, axis=1)
-    farthest_vertex = vertices[np.argmax(distances)]
-    bounding_box = farthest_vertex - mean_vertices
-
-    # translate & rescale
-    p_vertices = (vertices - mean_vertices) / np.amax(bounding_box)
+    # output
     p_vertices = np.around(p_vertices, decimals=5)
+    bounding_box = np.around(bounding_box, decimals=5)
+    mean_vertices = np.around(mean_vertices, decimals=5)
 
-    # print(mean_vertices, bounding_box)
+    p_data = {}
+    p_data['vertices']      = p_vertices
+    p_data['normals']       = p_normals
+    p_data['uvs']           = p_uvs
+    p_data['faces']         = p_faces
+    p_data['mean_vertices'] = mean_vertices
+    p_data['bounding_box']  = bounding_box
 
-    return p_vertices, p_normals, p_uvs, p_faces
+    return p_data
 
-# generate .npz file from .tif files
-write_npz(NPZ_DIR, TIF_DIR, clip)
-# generate .nrrd file from .npz file
+# Read .obj file
+data = parse_obj(OBJ_DIR)
+# Processing .obj data
+p_data = processing(data)
+# Save .obj file
+save_obj(NEW_OBJ_DIR, p_data)
+# Generate .npz file from .tif files
+write_npz(NPZ_DIR, TIF_DIR, p_data)
+# Generate .nrrd file from .npz file
 write_nrrd(NRRD_DIR, read_npz(NPZ_DIR, 'image_stack'))
-# read .obj file
-vertices, normals, uvs, faces = parse_obj(OBJ_DIR)
-# processing .obj data
-p_vertices, p_normals, p_uvs, p_faces = processing(vertices, normals, uvs, faces)
-# save .obj file
-save_obj(NEW_OBJ_DIR, p_vertices, p_normals, p_uvs, p_faces)
 
 # Copy the generated files to the client folder
 shutil.copy(NRRD_DIR , 'client/public')
