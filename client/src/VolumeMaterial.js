@@ -98,20 +98,20 @@ export class VolumeMaterial extends ShaderMaterial {
             if ( nsteps < 1 ) discard;
 
             bool intersectsSurface = false;
-            vec4 localPoint = vec4( sdfRayOrigin + sdfRayDirection * ( distToBox + 1e-5 ), 1.0 );
-            vec4 point = sdfTransform * localPoint;
-            vec3 uv = localPoint.xyz + vec3( 0.5 );
-            vec3 step = sdfRayDirection * distInsideBox / float(nsteps);
+            vec4 boxNearPoint = vec4( sdfRayOrigin + sdfRayDirection * ( distToBox + 1e-5 ), 1.0 );
+            vec4 boxFarPoint = vec4( sdfRayOrigin + sdfRayDirection * ( distToBox + distInsideBox - 1e-5 ), 1.0 );
+            vec4 nearPoint = sdfTransform * boxNearPoint;
+            vec4 farPoint = sdfTransform * boxFarPoint;
 
             // For testing: show the number of steps. This helps to establish whether the rays are correctly oriented
             // gl_FragColor = vec4(0.0, float(nsteps) / size.x, 1.0, 1.0);
             // return;
 
-            // ray march
+            // ray march (near -> surface)
             for ( int i = 0; i < MAX_STEPS; i ++ ) {
               // sdf box extends from - 0.5 to 0.5
               // transform into the local bounds space [ 0, 1 ] and check if we're inside the bounds
-              vec3 uv = ( sdfTransformInverse * point ).xyz + vec3( 0.5 );
+              vec3 uv = ( sdfTransformInverse * nearPoint ).xyz + vec3( 0.5 );
               if ( uv.x < 0.0 || uv.x > 1.0 || uv.y < 0.0 || uv.y > 1.0 || uv.z < 0.0 || uv.z > 1.0 ) {
                 break;
               }
@@ -122,19 +122,40 @@ export class VolumeMaterial extends ShaderMaterial {
                 break;
               }
               // step the ray
-              point.xyz += rayDirection * abs( distanceToSurface );
+              nearPoint.xyz += rayDirection * abs( distanceToSurface );
+            }
+
+            // ray march (far -> surface)
+            for ( int i = 0; i < MAX_STEPS; i ++ ) {
+              // sdf box extends from - 0.5 to 0.5
+              // transform into the local bounds space [ 0, 1 ] and check if we're inside the bounds
+              vec3 uv = ( sdfTransformInverse * farPoint ).xyz + vec3( 0.5 );
+              if ( uv.x < 0.0 || uv.x > 1.0 || uv.y < 0.0 || uv.y > 1.0 || uv.z < 0.0 || uv.z > 1.0 ) {
+                break;
+              }
+              // get the distance to surface and exit the loop if we're close to the surface
+              float distanceToSurface = texture2D( sdfTex, uv ).r - surface;
+              if ( distanceToSurface < SURFACE_EPSILON ) {
+                intersectsSurface = true;
+                break;
+              }
+              // step the ray
+              farPoint.xyz -= rayDirection * abs( distanceToSurface );
             }
 
             // volume rendering
             if ( intersectsSurface ) {
-              vec3 uv = (sdfTransformInverse * point).xyz + vec3( 0.5 );
+              float thickness = length((sdfTransformInverse * (farPoint - nearPoint)).xyz);
+              int nsteps = int(thickness * size.x / relative_step_size + 0.5);
+              if ( nsteps < 1 ) discard;
+
+              vec3 step = sdfRayDirection * thickness / float(nsteps);
+              vec3 uv = (sdfTransformInverse * nearPoint).xyz + vec3( 0.5 );
 
               if (renderstyle == 0)
-                // cast_mip(uv, step, nsteps, sdfRayDirection);
-                cast_mip(uv, step * abs(surface), int(float(nsteps) * abs(surface)), sdfRayDirection);
+                cast_mip(uv, step, nsteps, sdfRayDirection);
               else if (renderstyle == 1)
-                // cast_iso(uv, step, nsteps, sdfRayDirection);
-                cast_iso(uv, step * abs(surface), int(float(nsteps) * abs(surface)), sdfRayDirection);
+                cast_iso(uv, step, nsteps, sdfRayDirection);
             }
 
             if (gl_FragColor.a < 0.05)
