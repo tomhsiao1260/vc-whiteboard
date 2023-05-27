@@ -7,14 +7,19 @@ from PIL import Image
 from tqdm import tqdm
 
 SCALE          = 0.1
-VOLPKG_DIR     = './example.volpkg'
+VOLPKG_DIR     = '../full-scrolls/Scroll1.volpkg'
 VOLUME_ID      = '20230205180739'
 SEGMENT_ID     = '20230506133355'
 
-# VOLPKG_DIR     = '../full-scrolls/Scroll1.volpkg'
-# VOLUME_ID      = 'pseudo'
-
 TIF_DIR        = f'{VOLPKG_DIR}/volumes_small/{VOLUME_ID}/*.tif'
+OBJ_DIR        = f'{VOLPKG_DIR}/paths/{SEGMENT_ID}/{SEGMENT_ID}.obj'
+
+SCALE          = 1.0
+VOLPKG_DIR     = './output/pseudo.volpkg'
+VOLUME_ID      = '20230527161628'
+SEGMENT_ID     = '20230527164921'
+
+TIF_DIR        = f'{VOLPKG_DIR}/volumes/{VOLUME_ID}/*.tif'
 OBJ_DIR        = f'{VOLPKG_DIR}/paths/{SEGMENT_ID}/{SEGMENT_ID}.obj'
 
 NEW_OBJ_DIR    = './output/' + 'data.obj'
@@ -47,6 +52,8 @@ def write_npz(NPZ_DIR, TIF_DIR, data):
     clip['w'] = max_point[0] - min_point[0]
     clip['h'] = max_point[1] - min_point[1]
     clip['d'] = max_point[2] - min_point[2]
+
+    clip = { 'x': 0, 'y': 0, 'z': 0, 'w': 500, 'h': 250, 'd': 100 }
 
     print('clip: ', clip)
 
