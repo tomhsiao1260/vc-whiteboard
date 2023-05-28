@@ -7,21 +7,21 @@ import numpy as np
 from PIL import Image
 from tqdm import tqdm
 
-# SCALE          = 0.1
-# VOLPKG_DIR     = '../full-scrolls/Scroll1.volpkg'
-# VOLUME_ID      = '20230205180739'
-# SEGMENT_ID     = [ '20230506133355' ]
+SCALE          = 0.1
+VOLPKG_DIR     = '../full-scrolls/Scroll1.volpkg'
+VOLUME_ID      = '20230205180739'
+SEGMENT_LIST   = [ '20230506133355' ]
 
-# TIF_DIR        = f'{VOLPKG_DIR}/volumes_small/{VOLUME_ID}/'
-# OBJ_DIR        = f'{VOLPKG_DIR}/paths/'
-
-SCALE          = 1.0
-VOLPKG_DIR     = './output/pseudo.volpkg'
-VOLUME_ID      = '20230527161628'
-SEGMENT_LIST   = [ '20230527164921' ]
-
-TIF_DIR        = f'{VOLPKG_DIR}/volumes/{VOLUME_ID}/'
+TIF_DIR        = f'{VOLPKG_DIR}/volumes_small/{VOLUME_ID}/'
 OBJ_DIR        = f'{VOLPKG_DIR}/paths/'
+
+# SCALE          = 1.0
+# VOLPKG_DIR     = './output/pseudo.volpkg'
+# VOLUME_ID      = '20230527161628'
+# SEGMENT_LIST   = [ '20230527164921' ]
+
+# TIF_DIR        = f'{VOLPKG_DIR}/volumes/{VOLUME_ID}/'
+# OBJ_DIR        = f'{VOLPKG_DIR}/paths/'
 
 NPZ_DIR        = './output/' + 'volume.npz'
 NRRD_DIR       = './output/' + 'volume.nrrd'
@@ -38,32 +38,22 @@ def read_npz(NPZ_DIR, key):
     return array
 
 def write_npz(NPZ_DIR, TIF_DIR, data):
-    c = data['mean_vertices'] * SCALE
-    b = data['bounding_box']  * SCALE
+    c = data['boundingBox']['min'] * SCALE
+    b = data['boundingBox']['max'] * SCALE
 
-    min_point = (c - b / 2).astype(int)
-    max_point = (c + b / 2).astype(int)
-    min_point[min_point < 0] = 0
-    max_point[max_point < 0] = 0
+    c[c < 0] = 0
+    b[b < 0] = 0
 
     clip = {}
-    clip['x'] = min_point[0]
-    clip['y'] = min_point[1]
-    clip['z'] = min_point[2]
-    clip['w'] = max_point[0] - min_point[0]
-    clip['h'] = max_point[1] - min_point[1]
-    clip['d'] = max_point[2] - min_point[2]
+    clip['x'] = int(c[0])
+    clip['y'] = int(c[1])
+    clip['z'] = int(c[2])
+    clip['w'] = int(b[0] - c[0])
+    clip['h'] = int(b[1] - c[1])
+    clip['d'] = int(b[2] - c[2])
 
-    clip = { 'x': 0, 'y': 0, 'z': 0, 'w': 500, 'h': 250, 'd': 100 }
+    # clip = { 'x': 0, 'y': 0, 'z': 0, 'w': 500, 'h': 250, 'd': 100 }
     print('clip: ', clip)
-
-    result = {}
-    result['clip'] = clip
-    result['nrrd'] = 'volume.nrrd'
-    result['obj'] = SEGMENT_LIST
-
-    with open(META_DIR, "w") as outfile:
-        json.dump(result, outfile)
 
     names = sorted(glob.glob(TIF_DIR + '*tif'))
     names = names[clip['z'] : clip['z'] + clip['d']]
@@ -75,6 +65,15 @@ def write_npz(NPZ_DIR, TIF_DIR, data):
         image_stack[:, :, i] = np.transpose(image, (1, 0))
 
     np.savez(NPZ_DIR, image_stack=image_stack)
+
+    meta = {}
+    meta['scale'] = SCALE
+    meta['clip'] = clip
+    meta['nrrd'] = 'volume.nrrd'
+    meta['obj'] = SEGMENT_LIST
+
+    with open(META_DIR, "w") as outfile:
+        json.dump(meta, outfile)
 
 def read_nrrd(NRRD_DIR):
     data, header = nrrd.read(NRRD_DIR)
@@ -139,29 +138,26 @@ def processing(data):
 
     # calculate bounding box
     mean_vertices = np.mean(vertices, axis=0)
-    distances = np.linalg.norm(vertices - mean_vertices, axis=1)
-    farthest_vertex = vertices[np.argmax(distances)]
-    bounding_box = 2 * np.abs(farthest_vertex - mean_vertices)
+    max_x = np.max(np.abs(vertices[:, 0] - mean_vertices[0]))
+    max_y = np.max(np.abs(vertices[:, 1] - mean_vertices[1]))
+    max_z = np.max(np.abs(vertices[:, 2] - mean_vertices[2]))
+
+    bounding_box = {}
+    bounding_box['min'] = mean_vertices - np.array([max_x, max_y, max_z])
+    bounding_box['max'] = mean_vertices + np.array([max_x, max_y, max_z])
 
     # translate & rescale
     p_vertices = vertices
-    # p_vertices = (vertices - mean_vertices) / np.amax(bounding_box)
     p_normals = normals
     p_uvs = uvs
     p_faces = faces
 
-    # output
-    p_vertices = np.around(p_vertices, decimals=5)
-    bounding_box = np.around(bounding_box, decimals=5)
-    mean_vertices = np.around(mean_vertices, decimals=5)
-
     p_data = {}
-    p_data['vertices']      = p_vertices
-    p_data['normals']       = p_normals
-    p_data['uvs']           = p_uvs
-    p_data['faces']         = p_faces
-    p_data['mean_vertices'] = mean_vertices
-    p_data['bounding_box']  = bounding_box
+    p_data['vertices']    = p_vertices
+    p_data['normals']     = p_normals
+    p_data['uvs']         = p_uvs
+    p_data['faces']       = p_faces
+    p_data['boundingBox'] = bounding_box
 
     return p_data
 

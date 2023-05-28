@@ -36,7 +36,7 @@ const volconfig = {
     label: 0.7
 };
 
-const { clip, nrrd, obj } = meta
+const { scale, clip, nrrd, obj } = meta
 let renderer, camera, scene, gui, stats
 let outputContainer, bvh, geometry, mesh, sdfTex, volumeTex
 let generateSdfPass, layerPass, raymarchPass, volumePass
@@ -116,15 +116,15 @@ function init() {
             const positions = geometry.attributes.position.array
 
             for (let i = 0; i < positions.length; i += 3) {
-                  const x = positions[i];
-                  const y = positions[i + 1];
-                  const z = positions[i + 2];
+                  const x = positions[i + 0] * scale;
+                  const y = positions[i + 1] * scale;
+                  const z = positions[i + 2] * scale;
 
                   const newX = - clip.w * s / 2 + (x - clip.x) * s
                   const newY = - clip.h * s / 2 + (y - clip.y) * s
                   const newZ = - clip.d * s / 2 + (z - clip.z) * s
 
-                  positions[i] = newX;
+                  positions[i + 0] = newX;
                   positions[i + 1] = newY;
                   positions[i + 2] = newZ;
             }
@@ -222,14 +222,14 @@ function updateSDF() {
     const matrix = new THREE.Matrix4()
     const center = new THREE.Vector3()
     const quat = new THREE.Quaternion()
-    const scale = new THREE.Vector3()
+    const scaling = new THREE.Vector3()
 
     const r = params.resolution
     const { width, height, depth } = volumeTex.image
 
     const s = 1 / Math.max(clip.w, clip.h, clip.d)
-    scale.set(clip.w * s, clip.h * s, clip.d * s)
-    matrix.compose(center, quat, scale)
+    scaling.set(clip.w * s, clip.h * s, clip.d * s)
+    matrix.compose(center, quat, scaling)
     inverseBoundsMatrix.copy(matrix).invert()
 
     // dispose of the existing sdf
