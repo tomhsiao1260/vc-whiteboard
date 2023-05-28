@@ -1,5 +1,7 @@
 import Stats from 'stats.js'
 import * as THREE from 'three'
+
+import meta from './meta.json'
 import textureGray from './textures/cm_gray.png'
 import textureViridis from './textures/cm_viridis.png'
 
@@ -8,7 +10,7 @@ import { FullScreenQuad } from 'three/examples/jsm/postprocessing/Pass.js'
 import { GUI } from 'three/examples/jsm/libs/lil-gui.module.min.js'
 import { NRRDLoader } from 'three/examples/jsm/loaders/NRRDLoader.js';
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js'
-import { MeshBVH, StaticGeometryGenerator } from 'three-mesh-bvh'
+import { MeshBVH } from 'three-mesh-bvh'
 
 import { GenerateSDFMaterial } from './GenerateSDFMaterial.js'
 import { RenderSDFLayerMaterial } from './RenderSDFLayerMaterial.js'
@@ -17,11 +19,10 @@ import { VolumeMaterial } from './VolumeMaterial.js'
 
 const params = {
     gpuGeneration: true,
-    resolution: 75,
-    margin: 0.2,
+    resolution: 1.0,
     regenerate: () => updateSDF(),
 
-    mode: 'volume',
+    mode: 'geometry',
     layer: 0,
     surface: 1.8
 }
@@ -35,7 +36,8 @@ const volconfig = {
     label: 0.7
 };
 
-let renderer, camera, scene, gui, stats, boxHelper
+const { clip, nrrd, obj } = meta
+let renderer, camera, scene, gui, stats
 let outputContainer, bvh, geometry, mesh, sdfTex, volumeTex
 let generateSdfPass, layerPass, raymarchPass, volumePass
 const inverseBoundsMatrix = new THREE.Matrix4()
@@ -74,12 +76,20 @@ function init() {
         0.1,
         50
     )
-    camera.position.set(1, 1, 2)
+    camera.position.set(0, 0, -0.8)
+    camera.up.set(0, -1, 0)
     camera.far = 5
     camera.updateProjectionMatrix()
 
-    boxHelper = new THREE.Box3Helper(new THREE.Box3())
-    scene.add(boxHelper)
+    window.addEventListener(
+        'resize',
+        function () {
+          camera.aspect = window.innerWidth / window.innerHeight
+          camera.updateProjectionMatrix()
+          renderer.setSize(window.innerWidth, window.innerHeight)
+        },
+        false
+    )
 
     new OrbitControls(camera, renderer.domElement)
 
@@ -89,39 +99,53 @@ function init() {
 
     // sdf pass to generate the 3d texture
     generateSdfPass = new FullScreenQuad(new GenerateSDFMaterial())
-
     // screen pass to render a single layer of the 3d texture
     layerPass = new FullScreenQuad(new RenderSDFLayerMaterial())
-
     // screen pass to render the sdf ray marching
     raymarchPass = new FullScreenQuad(new RayMarchSDFMaterial())
-
     // volume pass to render the volume data
     volumePass = new FullScreenQuad(new VolumeMaterial())
 
-    new OBJLoader()
-        .loadAsync('data.obj')
+
+    const papyrus = new OBJLoader()
+        .loadAsync(obj[0] + '.obj')
         .then((object) => {
-            const staticGen = new StaticGeometryGenerator(object)
 
-            staticGen.attributes = ['position', 'normal']
-            staticGen.useGroups = false
+            const s = 1 / Math.max(clip.w, clip.h, clip.d)
+            geometry = object.children[0].geometry
+            const positions = geometry.attributes.position.array
 
-            geometry = staticGen.generate().center()
+            for (let i = 0; i < positions.length; i += 3) {
+                  const x = positions[i];
+                  const y = positions[i + 1];
+                  const z = positions[i + 2];
+
+                  const newX = - clip.w * s / 2 + (x - clip.x) * s
+                  const newY = - clip.h * s / 2 + (y - clip.y) * s
+                  const newZ = - clip.d * s / 2 + (z - clip.z) * s
+
+                  positions[i] = newX;
+                  positions[i + 1] = newY;
+                  positions[i + 2] = newZ;
+            }
+            geometry.attributes.position.needsUpdate = true
+
+            geometry.computeBoundingBox()
+            geometry.boundingBox.max.set( clip.w * s / 2,  clip.h * s / 2,  clip.d * s / 2)
+            geometry.boundingBox.min.set(-clip.w * s / 2, -clip.h * s / 2, -clip.d * s / 2)
+            console.log(geometry.boundingBox)
 
             return new MeshBVH(geometry, { maxLeafTris: 1 })
         })
         .then((result) => {
             bvh = result
-      
+
             mesh = new THREE.Mesh(geometry, new THREE.MeshStandardMaterial())
             scene.add(mesh)
-
-            updateSDF()
         })
 
-    new NRRDLoader()
-        .loadAsync('data.nrrd')
+    const voxel = new NRRDLoader()
+        .loadAsync(nrrd)
         .then((volume) => {
 
             // THREEJS will select R32F (33326) based on the THREE.RedFormat and THREE.FloatType.
@@ -142,17 +166,7 @@ function init() {
             material.uniforms.size.value.set( volume.xLength, volume.yLength, volume.zLength );
         })
 
-    rebuildGUI()
-
-    window.addEventListener(
-        'resize',
-        function () {
-          camera.aspect = window.innerWidth / window.innerHeight
-          camera.updateProjectionMatrix()
-          renderer.setSize(window.innerWidth, window.innerHeight)
-        },
-        false
-    )
+    Promise.all([papyrus, voxel]).then(() => { updateSDF(); rebuildGUI(); });
 }
 
 // build the gui with parameters based on the selected display mode
@@ -161,20 +175,19 @@ function rebuildGUI() {
         gui.destroy()
     }
 
-    params.layer = Math.min(params.resolution, params.layer)
+    params.layer = Math.min(clip.d, params.layer)
 
     gui = new GUI()
 
     // const generationFolder = gui.addFolder('generation')
     // generationFolder.add(params, 'gpuGeneration')
-    // generationFolder.add(params, 'resolution', 10, 200, 1)
-    // generationFolder.add(params, 'margin', 0, 1)
+    // generationFolder.add(params, 'resolution', 0.1, 1, 0.01)
     // generationFolder.add(params, 'regenerate')
 
     const displayFolder = gui.addFolder('display')
     displayFolder
-      .add(params, 'mode', ['volume', 'layer', 'grid layers'])
-      // .add(params, 'mode', ['geometry', 'raymarching', 'layer', 'grid layers', 'volume'])
+      // .add(params, 'mode', ['volume', 'layer', 'grid layers'])
+      .add(params, 'mode', ['geometry', 'raymarching', 'layer', 'grid layers', 'volume'])
       .onChange(() => {
         rebuildGUI()
       })
@@ -183,7 +196,7 @@ function rebuildGUI() {
       displayFolder.add(volconfig, 'clim1', 0, 1)
       displayFolder.add(volconfig, 'clim2', 0, 1)
       displayFolder.add(params, 'surface', -0.2, 2.0)
-      displayFolder.add(params, 'layer', 0, params.resolution, 1)
+      displayFolder.add(params, 'layer', 0, clip.d, 1)
     }
 
     if (params.mode === 'grid layers') {
@@ -206,43 +219,31 @@ function rebuildGUI() {
 }
 
 function updateSDF() {
-    const dim = params.resolution
     const matrix = new THREE.Matrix4()
     const center = new THREE.Vector3()
     const quat = new THREE.Quaternion()
     const scale = new THREE.Vector3()
 
-    // compute the bounding box of the geometry including the margin which is used to
-    // define the range of the SDF
-    geometry.boundingBox.getCenter(center)
-    scale.subVectors(geometry.boundingBox.max, geometry.boundingBox.min)
-    scale.x += 2 * params.margin
-    scale.y += 2 * params.margin
-    scale.z += 2 * params.margin
+    const r = params.resolution
+    const { width, height, depth } = volumeTex.image
+
+    const s = 1 / Math.max(clip.w, clip.h, clip.d)
+    scale.set(clip.w * s, clip.h * s, clip.d * s)
     matrix.compose(center, quat, scale)
     inverseBoundsMatrix.copy(matrix).invert()
-
-    // update the box helper
-    boxHelper.box.copy(geometry.boundingBox)
-    boxHelper.box.min.x -= params.margin
-    boxHelper.box.min.y -= params.margin
-    boxHelper.box.min.z -= params.margin
-    boxHelper.box.max.x += params.margin
-    boxHelper.box.max.y += params.margin
-    boxHelper.box.max.z += params.margin
 
     // dispose of the existing sdf
     if (sdfTex) {
         sdfTex.dispose()
     }
 
-    const pxWidth = 1 / dim
+    const pxWidth = 1 / (depth * r)
     const halfWidth = 0.5 * pxWidth
 
     const startTime = window.performance.now()
     if (params.gpuGeneration) {
         // create a new 3d render target texture
-        sdfTex = new THREE.WebGL3DRenderTarget(dim, dim, dim)
+        sdfTex = new THREE.WebGL3DRenderTarget(width * r, height * r, depth * r)
         sdfTex.texture.format = THREE.RedFormat
         sdfTex.texture.type = THREE.FloatType
         sdfTex.texture.minFilter = THREE.LinearFilter
@@ -253,7 +254,7 @@ function updateSDF() {
         generateSdfPass.material.uniforms.matrix.value.copy(matrix)
 
         // render into each layer
-        for (let i = 0; i < dim; i++) {
+        for (let i = 0; i < depth * r; i++) {
             generateSdfPass.material.uniforms.zValue.value = i * pxWidth + halfWidth
 
             renderer.setRenderTarget(sdfTex, i)
@@ -304,8 +305,8 @@ function render() {
 
 		material.uniforms.clim.value.set( volconfig.clim1, volconfig.clim2 );
         material.uniforms.surface.value = params.surface;
-        material.uniforms.layer.value = params.layer / sdfTex.width;
-        material.uniforms.layers.value = sdfTex.texture.image.width;
+        material.uniforms.layer.value = params.layer / volumeTex.image.depth;
+        material.uniforms.layers.value = volumeTex.image.depth;
 		material.uniforms.sdfTex.value = sdfTex.texture;
 		tex = sdfTex.texture;
 

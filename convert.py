@@ -1,4 +1,5 @@
 import os
+import json
 import shutil
 import glob
 import nrrd
@@ -6,25 +7,25 @@ import numpy as np
 from PIL import Image
 from tqdm import tqdm
 
-SCALE          = 0.1
-VOLPKG_DIR     = '../full-scrolls/Scroll1.volpkg'
-VOLUME_ID      = '20230205180739'
-SEGMENT_ID     = '20230506133355'
+# SCALE          = 0.1
+# VOLPKG_DIR     = '../full-scrolls/Scroll1.volpkg'
+# VOLUME_ID      = '20230205180739'
+# SEGMENT_ID     = [ '20230506133355' ]
 
-TIF_DIR        = f'{VOLPKG_DIR}/volumes_small/{VOLUME_ID}/*.tif'
-OBJ_DIR        = f'{VOLPKG_DIR}/paths/{SEGMENT_ID}/{SEGMENT_ID}.obj'
+# TIF_DIR        = f'{VOLPKG_DIR}/volumes_small/{VOLUME_ID}/'
+# OBJ_DIR        = f'{VOLPKG_DIR}/paths/'
 
 SCALE          = 1.0
 VOLPKG_DIR     = './output/pseudo.volpkg'
 VOLUME_ID      = '20230527161628'
-SEGMENT_ID     = '20230527164921'
+SEGMENT_LIST   = [ '20230527164921' ]
 
-TIF_DIR        = f'{VOLPKG_DIR}/volumes/{VOLUME_ID}/*.tif'
-OBJ_DIR        = f'{VOLPKG_DIR}/paths/{SEGMENT_ID}/{SEGMENT_ID}.obj'
+TIF_DIR        = f'{VOLPKG_DIR}/volumes/{VOLUME_ID}/'
+OBJ_DIR        = f'{VOLPKG_DIR}/paths/'
 
-NEW_OBJ_DIR    = './output/' + 'data.obj'
-NPZ_DIR        = './output/' + 'data.npz'
-NRRD_DIR       = './output/' + 'data.nrrd'
+NPZ_DIR        = './output/' + 'volume.npz'
+NRRD_DIR       = './output/' + 'volume.nrrd'
+META_DIR       = './output/' + 'meta.json'
 
 
 if not os.path.exists('output'):
@@ -54,10 +55,17 @@ def write_npz(NPZ_DIR, TIF_DIR, data):
     clip['d'] = max_point[2] - min_point[2]
 
     clip = { 'x': 0, 'y': 0, 'z': 0, 'w': 500, 'h': 250, 'd': 100 }
-
     print('clip: ', clip)
 
-    names = sorted(glob.glob(TIF_DIR))
+    result = {}
+    result['clip'] = clip
+    result['nrrd'] = 'volume.nrrd'
+    result['obj'] = SEGMENT_LIST
+
+    with open(META_DIR, "w") as outfile:
+        json.dump(result, outfile)
+
+    names = sorted(glob.glob(TIF_DIR + '*tif'))
     names = names[clip['z'] : clip['z'] + clip['d']]
     image_stack = np.zeros((clip['w'], clip['h'], len(names)), dtype=np.float32)
 
@@ -136,7 +144,8 @@ def processing(data):
     bounding_box = 2 * np.abs(farthest_vertex - mean_vertices)
 
     # translate & rescale
-    p_vertices = (vertices - mean_vertices) / np.amax(bounding_box)
+    p_vertices = vertices
+    # p_vertices = (vertices - mean_vertices) / np.amax(bounding_box)
     p_normals = normals
     p_uvs = uvs
     p_faces = faces
@@ -157,11 +166,9 @@ def processing(data):
     return p_data
 
 # Read .obj file
-data = parse_obj(OBJ_DIR)
+data = parse_obj(f'{OBJ_DIR}{SEGMENT_LIST[0]}/{SEGMENT_LIST[0]}.obj')
 # Processing .obj data
 p_data = processing(data)
-# Save .obj file
-save_obj(NEW_OBJ_DIR, p_data)
 # Generate .npz file from .tif files
 write_npz(NPZ_DIR, TIF_DIR, p_data)
 # Generate .nrrd file from .npz file
@@ -169,4 +176,12 @@ write_nrrd(NRRD_DIR, read_npz(NPZ_DIR, 'image_stack'))
 
 # Copy the generated files to the client folder
 shutil.copy(NRRD_DIR , 'client/public')
-shutil.copy(NEW_OBJ_DIR , 'client/public')
+shutil.copy(META_DIR , 'client/src')
+
+for SEGMENT_ID in SEGMENT_LIST:
+    filename = f'{OBJ_DIR}{SEGMENT_ID}/{SEGMENT_ID}.obj'
+    shutil.copy(filename, 'output')
+    shutil.copy(filename, 'client/public')
+
+
+
