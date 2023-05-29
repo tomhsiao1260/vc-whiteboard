@@ -37,7 +37,7 @@ const volconfig = {
     label: 0.7
 };
 
-const { scale, clip, nrrd, obj } = meta
+const { clip, nrrd, obj } = meta
 let renderer, camera, scene, gui, stats
 let outputContainer, bvh, geometry, mesh, sdfTex, volumeTex
 let generateSdfPass, layerPass, raymarchPass, volumePass
@@ -121,19 +121,19 @@ function init() {
     const papyrus = Promise.all(promiseList)
         .then((object) => {
 
-            const s = 1 / Math.max(clip.w, clip.h, clip.d)
+            const s = 1 / Math.max(nrrd.w, nrrd.h, nrrd.d)
             geometry = BufferGeometryUtils.mergeGeometries(geometryList)
             console.log(geometry)
             const positions = geometry.attributes.position.array
 
             for (let i = 0; i < positions.length; i += 3) {
-                  const x = positions[i + 0] * scale;
-                  const y = positions[i + 1] * scale;
-                  const z = positions[i + 2] * scale;
+                  const x = positions[i + 0];
+                  const y = positions[i + 1];
+                  const z = positions[i + 2];
 
-                  const newX = - clip.w * s / 2 + (x - clip.x) * s
-                  const newY = - clip.h * s / 2 + (y - clip.y) * s
-                  const newZ = - clip.d * s / 2 + (z - clip.z) * s
+                  const newX = nrrd.w * s * ((x - clip.x) / clip.w - 0.5)
+                  const newY = nrrd.h * s * ((y - clip.y) / clip.h - 0.5)
+                  const newZ = nrrd.d * s * ((z - clip.z) / clip.d - 0.5)
 
                   positions[i + 0] = newX;
                   positions[i + 1] = newY;
@@ -142,9 +142,9 @@ function init() {
             geometry.attributes.position.needsUpdate = true
 
             geometry.computeBoundingBox()
-            geometry.boundingBox.max.set( clip.w * s / 2,  clip.h * s / 2,  clip.d * s / 2)
-            geometry.boundingBox.min.set(-clip.w * s / 2, -clip.h * s / 2, -clip.d * s / 2)
-            console.log(geometry.boundingBox)
+            geometry.boundingBox.max.set( nrrd.w * s / 2,  nrrd.h * s / 2,  nrrd.d * s / 2)
+            geometry.boundingBox.min.set(-nrrd.w * s / 2, -nrrd.h * s / 2, -nrrd.d * s / 2)
+            // console.log(geometry.boundingBox)
 
             return new MeshBVH(geometry, { maxLeafTris: 1 })
         })
@@ -156,7 +156,7 @@ function init() {
         })
 
     const voxel = new NRRDLoader()
-        .loadAsync(nrrd)
+        .loadAsync(nrrd.name)
         .then((volume) => {   
 
             // THREEJS will select R32F (33326) based on the THREE.RedFormat and THREE.FloatType.
@@ -186,7 +186,8 @@ function rebuildGUI() {
         gui.destroy()
     }
 
-    params.layer = Math.min(clip.d, params.layer)
+    params.layer = Math.max(clip.z, params.layer)
+    params.layer = Math.min(clip.z + clip.d, params.layer)
 
     gui = new GUI()
 
@@ -207,7 +208,7 @@ function rebuildGUI() {
       displayFolder.add(volconfig, 'clim1', 0, 1)
       displayFolder.add(volconfig, 'clim2', 0, 1)
       displayFolder.add(params, 'surface', -0.2, 2.0)
-      displayFolder.add(params, 'layer', 0, clip.d, 1)
+      displayFolder.add(params, 'layer', clip.z, clip.z + clip.d, 1)
     }
 
     if (params.mode === 'grid layers') {
@@ -236,10 +237,9 @@ function updateSDF() {
     const scaling = new THREE.Vector3()
 
     const r = params.resolution
-    const { width, height, depth } = volumeTex.image
+    const s = 1 / Math.max(nrrd.w, nrrd.h, nrrd.d)
 
-    const s = 1 / Math.max(clip.w, clip.h, clip.d)
-    scaling.set(clip.w * s, clip.h * s, clip.d * s)
+    scaling.set(nrrd.w * s, nrrd.h * s, nrrd.d * s)
     matrix.compose(center, quat, scaling)
     inverseBoundsMatrix.copy(matrix).invert()
 
@@ -248,13 +248,13 @@ function updateSDF() {
         sdfTex.dispose()
     }
 
-    const pxWidth = 1 / (depth * r)
+    const pxWidth = 1 / (nrrd.d * r)
     const halfWidth = 0.5 * pxWidth
 
     const startTime = window.performance.now()
     if (params.gpuGeneration) {
         // create a new 3d render target texture
-        sdfTex = new THREE.WebGL3DRenderTarget(width * r, height * r, depth * r)
+        sdfTex = new THREE.WebGL3DRenderTarget(nrrd.w * r, nrrd.h * r, nrrd.d * r)
         sdfTex.texture.format = THREE.RedFormat
         sdfTex.texture.type = THREE.FloatType
         sdfTex.texture.minFilter = THREE.LinearFilter
@@ -265,7 +265,7 @@ function updateSDF() {
         generateSdfPass.material.uniforms.matrix.value.copy(matrix)
 
         // render into each layer
-        for (let i = 0; i < depth * r; i++) {
+        for (let i = 0; i < nrrd.d * r; i++) {
             generateSdfPass.material.uniforms.zValue.value = i * pxWidth + halfWidth
 
             renderer.setRenderTarget(sdfTex, i)
@@ -316,8 +316,8 @@ function render() {
 
 		material.uniforms.clim.value.set( volconfig.clim1, volconfig.clim2 );
         material.uniforms.surface.value = params.surface;
-        material.uniforms.layer.value = params.layer / volumeTex.image.depth;
-        material.uniforms.layers.value = volumeTex.image.depth;
+        material.uniforms.layer.value = (params.layer - clip.z) / clip.d;
+        material.uniforms.layers.value = clip.d;
 		material.uniforms.sdfTex.value = sdfTex.texture;
 		tex = sdfTex.texture;
 
@@ -337,11 +337,8 @@ function render() {
         camera.updateMatrixWorld();
 		mesh.updateMatrixWorld();
 
-        let tex;
-        tex = sdfTex.texture;
-
-        const { width, depth, height } = tex.image;
-        raymarchPass.material.uniforms.sdfTex.value = tex;
+        const { width, depth, height } = sdfTex.texture.image;
+        raymarchPass.material.uniforms.sdfTex.value = sdfTex.texture;
 		raymarchPass.material.uniforms.normalStep.value.set( 1 / width, 1 / height, 1 / depth );
 		raymarchPass.material.uniforms.surface.value = params.surface;
 		raymarchPass.material.uniforms.projectionInverse.value.copy( camera.projectionMatrixInverse );

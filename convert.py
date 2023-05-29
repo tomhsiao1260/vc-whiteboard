@@ -1,5 +1,6 @@
 import os
 import json
+import math
 import shutil
 import glob
 import nrrd
@@ -7,28 +8,33 @@ import numpy as np
 from PIL import Image
 from tqdm import tqdm
 
-CLIP = None
-CLIP = { 'x': 300, 'y': 300, 'z': 0, 'w': 200, 'h': 150, 'd': 100 }
-# CLIP = { 'x': 0, 'y': 0, 'z': 0, 'w': 810, 'h': 789, 'd': 100 }
+RAW_TO_TIF_SAMPLING = 10
+TIF_TO_VOLUME_SAMPLING = 3
 
-SCALE          = 0.1
+# CLIP = None
+CLIP = { 'x': 0, 'y': 0, 'z': 0, 'w': 8096, 'h': 7888, 'd': 1000 }
+
 VOLPKG_DIR     = '../full-scrolls/Scroll1.volpkg'
 VOLUME_ID      = '20230205180739'
-# CLIP:  {'x': 395, 'y': 406, 'z': 0, 'w': 42, 'h': 34, 'd': 99}
 # SEGMENT_ID     = '20230506133355'
-# CLIP:  {'x': 265, 'y': 259, 'z': 0, 'w': 20, 'h': 18, 'd': 6}
-# SEGMENT_ID     = '20230503225234'
 
 TIF_DIR        = f'{VOLPKG_DIR}/volumes_small/{VOLUME_ID}/'
 OBJ_DIR        = f'{VOLPKG_DIR}/paths/'
 
-# SCALE          = 1.0
+# RAW_TO_TIF_SAMPLING = 1
+# TIF_TO_VOLUME_SAMPLING = 1
+
+# # CLIP = None
+# CLIP = { 'x': 0, 'y': 0, 'z': 0, 'w': 500, 'h': 250, 'd': 100 }
+
 # VOLPKG_DIR     = './output/pseudo.volpkg'
 # VOLUME_ID      = '20230527161628'
 # SEGMENT_ID     = '20230527164921'
 
 # TIF_DIR        = f'{VOLPKG_DIR}/volumes/{VOLUME_ID}/'
 # OBJ_DIR        = f'{VOLPKG_DIR}/paths/'
+
+NRRD_INFO      = {}
 
 OBJ_FOLDER     = './output/' + 'obj'
 NPZ_DIR        = './output/' + 'volume.npz'
@@ -45,14 +51,41 @@ def read_npz(NPZ_DIR, key):
     return array
 
 def write_npz(NPZ_DIR, TIF_DIR, CLIP):
+    # change to tif data clip
+    rs = RAW_TO_TIF_SAMPLING
+    c  = { key: round(value / rs) for key, value in CLIP.items() }
+
     names = sorted(glob.glob(TIF_DIR + '*tif'))
-    names = names[CLIP['z'] : CLIP['z'] + CLIP['d']]
-    image_stack = np.zeros((CLIP['w'], CLIP['h'], len(names)), dtype=np.float32)
+    names = names[c['z'] : c['z'] + c['d']]
+    image_stack = np.zeros((c['w'], c['h'], c['d']), dtype=np.float32)
 
     for i, filename in enumerate(tqdm(names)):
-        image = np.array(Image.open(filename), dtype=np.float32)[CLIP['y']:(CLIP['y']+CLIP['h']), CLIP['x']:(CLIP['x']+CLIP['w'])]
+        image = np.array(Image.open(filename), dtype=np.float32)[c['y']:(c['y']+c['h']), c['x']:(c['x']+c['w'])]
         image /= 65535.0
         image_stack[:, :, i] = np.transpose(image, (1, 0))
+
+    # sampling tif stack
+    ts = TIF_TO_VOLUME_SAMPLING
+
+    print(image_stack.shape)
+
+    pad_x = (ts - image_stack.shape[0] % ts) % ts
+    pad_y = (ts - image_stack.shape[1] % ts) % ts
+    pad_z = (ts - image_stack.shape[2] % ts) % ts
+
+    image_stack = np.pad(image_stack, ((0, pad_x), (0, pad_y), (0, pad_z)), mode='edge')
+
+    print(image_stack.shape)
+
+    image_stack = image_stack.reshape((math.ceil(c['w'] / ts), ts, math.ceil(c['h'] / ts), ts, math.ceil(c['d'] / ts), ts))
+    image_stack = image_stack.mean(axis=(1, 3, 5))
+
+    print(image_stack.shape)
+
+    NRRD_INFO['name'] = 'volume.nrrd'
+    NRRD_INFO['w'] = image_stack.shape[0]
+    NRRD_INFO['h'] = image_stack.shape[1]
+    NRRD_INFO['d'] = image_stack.shape[2]
 
     np.savez(NPZ_DIR, image_stack=image_stack)
 
@@ -180,8 +213,8 @@ if not isinstance(CLIP, dict):
     # Processing .obj data
     p_data = processing(data)
 
-    c = p_data['boundingBox']['min'] * SCALE
-    b = p_data['boundingBox']['max'] * SCALE
+    c = p_data['boundingBox']['min']
+    b = p_data['boundingBox']['max']
 
     c[c < 0] = 0
     b[b < 0] = 0
@@ -194,17 +227,15 @@ if not isinstance(CLIP, dict):
     CLIP['h'] = int(b[1] - c[1])
     CLIP['d'] = int(b[2] - c[2])
 
-    print('CLIP: ', CLIP)
-
+print('CLIP: ', CLIP)
 write_npz(NPZ_DIR, TIF_DIR, CLIP)
 # Generate .nrrd file from .npz file
 write_nrrd(NRRD_DIR, read_npz(NPZ_DIR, 'image_stack'))
 
 # Save meta data
 meta = {}
-meta['scale'] = SCALE
 meta['clip'] = CLIP
-meta['nrrd'] = 'volume.nrrd'
+meta['nrrd'] = NRRD_INFO
 meta['obj'] = SEGMENT_LIST
 
 with open(META_DIR, "w") as outfile:
