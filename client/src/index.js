@@ -5,12 +5,13 @@ import meta from './meta.json'
 import textureGray from './textures/cm_gray.png'
 import textureViridis from './textures/cm_viridis.png'
 
+import { MeshBVH } from 'three-mesh-bvh'
 import { OBJLoader } from 'three/examples/jsm/loaders/OBJLoader.js'
 import { FullScreenQuad } from 'three/examples/jsm/postprocessing/Pass.js'
 import { GUI } from 'three/examples/jsm/libs/lil-gui.module.min.js'
 import { NRRDLoader } from 'three/examples/jsm/loaders/NRRDLoader.js';
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js'
-import { MeshBVH } from 'three-mesh-bvh'
+import * as BufferGeometryUtils from 'three/examples/jsm/utils/BufferGeometryUtils.js'
 
 import { GenerateSDFMaterial } from './GenerateSDFMaterial.js'
 import { RenderSDFLayerMaterial } from './RenderSDFLayerMaterial.js'
@@ -106,13 +107,23 @@ function init() {
     // volume pass to render the volume data
     volumePass = new FullScreenQuad(new VolumeMaterial())
 
+    const promiseList = []
+    const geometryList = []
 
-    const papyrus = new OBJLoader()
-        .loadAsync(obj[0] + '.obj')
+    for (let i = 0; i < obj.length; i++) {
+        const loading = new OBJLoader()
+            .loadAsync('obj/' + obj[i] + '.obj')
+            .then((object) => { geometryList.push(object.children[0].geometry) })
+
+        promiseList.push(loading)
+    }
+
+    const papyrus = Promise.all(promiseList)
         .then((object) => {
 
             const s = 1 / Math.max(clip.w, clip.h, clip.d)
-            geometry = object.children[0].geometry
+            geometry = BufferGeometryUtils.mergeGeometries(geometryList)
+            console.log(geometry)
             const positions = geometry.attributes.position.array
 
             for (let i = 0; i < positions.length; i += 3) {
@@ -146,7 +157,7 @@ function init() {
 
     const voxel = new NRRDLoader()
         .loadAsync(nrrd)
-        .then((volume) => {
+        .then((volume) => {   
 
             // THREEJS will select R32F (33326) based on the THREE.RedFormat and THREE.FloatType.
             // Also see https://www.khronos.org/registry/webgl/specs/latest/2.0/#TEXTURE_TYPES_FORMATS_FROM_DOM_ELEMENTS_TABLE

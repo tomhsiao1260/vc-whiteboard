@@ -7,10 +7,17 @@ import numpy as np
 from PIL import Image
 from tqdm import tqdm
 
+CLIP = None
+CLIP = { 'x': 300, 'y': 300, 'z': 0, 'w': 200, 'h': 150, 'd': 100 }
+# CLIP = { 'x': 0, 'y': 0, 'z': 0, 'w': 810, 'h': 789, 'd': 100 }
+
 SCALE          = 0.1
 VOLPKG_DIR     = '../full-scrolls/Scroll1.volpkg'
 VOLUME_ID      = '20230205180739'
-SEGMENT_LIST   = [ '20230506133355' ]
+# CLIP:  {'x': 395, 'y': 406, 'z': 0, 'w': 42, 'h': 34, 'd': 99}
+# SEGMENT_ID     = '20230506133355'
+# CLIP:  {'x': 265, 'y': 259, 'z': 0, 'w': 20, 'h': 18, 'd': 6}
+# SEGMENT_ID     = '20230503225234'
 
 TIF_DIR        = f'{VOLPKG_DIR}/volumes_small/{VOLUME_ID}/'
 OBJ_DIR        = f'{VOLPKG_DIR}/paths/'
@@ -18,15 +25,15 @@ OBJ_DIR        = f'{VOLPKG_DIR}/paths/'
 # SCALE          = 1.0
 # VOLPKG_DIR     = './output/pseudo.volpkg'
 # VOLUME_ID      = '20230527161628'
-# SEGMENT_LIST   = [ '20230527164921' ]
+# SEGMENT_ID     = '20230527164921'
 
 # TIF_DIR        = f'{VOLPKG_DIR}/volumes/{VOLUME_ID}/'
 # OBJ_DIR        = f'{VOLPKG_DIR}/paths/'
 
+OBJ_FOLDER     = './output/' + 'obj'
 NPZ_DIR        = './output/' + 'volume.npz'
 NRRD_DIR       = './output/' + 'volume.nrrd'
 META_DIR       = './output/' + 'meta.json'
-
 
 if not os.path.exists('output'):
     os.makedirs('output')
@@ -37,43 +44,17 @@ def read_npz(NPZ_DIR, key):
 
     return array
 
-def write_npz(NPZ_DIR, TIF_DIR, data):
-    c = data['boundingBox']['min'] * SCALE
-    b = data['boundingBox']['max'] * SCALE
-
-    c[c < 0] = 0
-    b[b < 0] = 0
-
-    clip = {}
-    clip['x'] = int(c[0])
-    clip['y'] = int(c[1])
-    clip['z'] = int(c[2])
-    clip['w'] = int(b[0] - c[0])
-    clip['h'] = int(b[1] - c[1])
-    clip['d'] = int(b[2] - c[2])
-
-    # clip = { 'x': 0, 'y': 0, 'z': 0, 'w': 500, 'h': 250, 'd': 100 }
-    print('clip: ', clip)
-
+def write_npz(NPZ_DIR, TIF_DIR, CLIP):
     names = sorted(glob.glob(TIF_DIR + '*tif'))
-    names = names[clip['z'] : clip['z'] + clip['d']]
-    image_stack = np.zeros((clip['w'], clip['h'], len(names)), dtype=np.float32)
+    names = names[CLIP['z'] : CLIP['z'] + CLIP['d']]
+    image_stack = np.zeros((CLIP['w'], CLIP['h'], len(names)), dtype=np.float32)
 
     for i, filename in enumerate(tqdm(names)):
-        image = np.array(Image.open(filename), dtype=np.float32)[clip['y']:(clip['y']+clip['h']), clip['x']:(clip['x']+clip['w'])]
+        image = np.array(Image.open(filename), dtype=np.float32)[CLIP['y']:(CLIP['y']+CLIP['h']), CLIP['x']:(CLIP['x']+CLIP['w'])]
         image /= 65535.0
         image_stack[:, :, i] = np.transpose(image, (1, 0))
 
     np.savez(NPZ_DIR, image_stack=image_stack)
-
-    meta = {}
-    meta['scale'] = SCALE
-    meta['clip'] = clip
-    meta['nrrd'] = 'volume.nrrd'
-    meta['obj'] = SEGMENT_LIST
-
-    with open(META_DIR, "w") as outfile:
-        json.dump(meta, outfile)
 
 def read_nrrd(NRRD_DIR):
     data, header = nrrd.read(NRRD_DIR)
@@ -161,23 +142,77 @@ def processing(data):
 
     return p_data
 
-# Read .obj file
-data = parse_obj(f'{OBJ_DIR}{SEGMENT_LIST[0]}/{SEGMENT_LIST[0]}.obj')
-# Processing .obj data
-p_data = processing(data)
+
+# Select .obj files
+SEGMENT_LIST = []
+
+shutil.rmtree('client/public/obj', ignore_errors=True)
+shutil.rmtree('output/obj', ignore_errors=True)
+
+if not isinstance(CLIP, dict):
+
+    if not os.path.exists(OBJ_FOLDER):
+        os.makedirs(OBJ_FOLDER)
+
+    filename = f'{OBJ_DIR}{SEGMENT_ID}/{SEGMENT_ID}.obj'
+    shutil.copy(filename, OBJ_FOLDER)
+    SEGMENT_LIST.append(SEGMENT_ID)
+
+else:
+
+    subfolders = [f.path for f in os.scandir(OBJ_DIR) if f.is_dir()]
+    for subfolder in subfolders:
+        folder_name = os.path.basename(subfolder)
+        obj_file_path = os.path.join(subfolder, folder_name + '.obj')
+        
+        if os.path.isfile(obj_file_path):
+            if not os.path.exists(OBJ_FOLDER):
+                os.makedirs(OBJ_FOLDER)
+            shutil.copy(obj_file_path , OBJ_FOLDER)
+            SEGMENT_LIST.append(folder_name)
+
+shutil.copytree(OBJ_FOLDER, 'client/public/obj')
+
 # Generate .npz file from .tif files
-write_npz(NPZ_DIR, TIF_DIR, p_data)
+if not isinstance(CLIP, dict):
+    # Read .obj file
+    data = parse_obj(f'{OBJ_DIR}{SEGMENT_ID}/{SEGMENT_ID}.obj')
+    # Processing .obj data
+    p_data = processing(data)
+
+    c = p_data['boundingBox']['min'] * SCALE
+    b = p_data['boundingBox']['max'] * SCALE
+
+    c[c < 0] = 0
+    b[b < 0] = 0
+
+    CLIP = {}
+    CLIP['x'] = int(c[0])
+    CLIP['y'] = int(c[1])
+    CLIP['z'] = int(c[2])
+    CLIP['w'] = int(b[0] - c[0])
+    CLIP['h'] = int(b[1] - c[1])
+    CLIP['d'] = int(b[2] - c[2])
+
+    print('CLIP: ', CLIP)
+
+write_npz(NPZ_DIR, TIF_DIR, CLIP)
 # Generate .nrrd file from .npz file
 write_nrrd(NRRD_DIR, read_npz(NPZ_DIR, 'image_stack'))
+
+# Save meta data
+meta = {}
+meta['scale'] = SCALE
+meta['clip'] = CLIP
+meta['nrrd'] = 'volume.nrrd'
+meta['obj'] = SEGMENT_LIST
+
+with open(META_DIR, "w") as outfile:
+    json.dump(meta, outfile, indent=4)
 
 # Copy the generated files to the client folder
 shutil.copy(NRRD_DIR , 'client/public')
 shutil.copy(META_DIR , 'client/src')
-
-for SEGMENT_ID in SEGMENT_LIST:
-    filename = f'{OBJ_DIR}{SEGMENT_ID}/{SEGMENT_ID}.obj'
-    shutil.copy(filename, 'output')
-    shutil.copy(filename, 'client/public')
 
 
 
