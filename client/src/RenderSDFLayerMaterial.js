@@ -8,6 +8,7 @@ export class RenderSDFLayerMaterial extends ShaderMaterial {
       },
 
       uniforms: {
+        inverse: { value: false },
         surface: { value: 0 },
         voldata: { value: null },
         sdfTex: { value: null },
@@ -37,6 +38,7 @@ export class RenderSDFLayerMaterial extends ShaderMaterial {
         uniform float volumeAspect;
         uniform float screenAspect;
         uniform float surface;
+        uniform bool inverse;
 
         vec4 apply_colormap(float val) {
           val = (val - clim[0]) / (clim[1] - clim[0]);
@@ -63,7 +65,9 @@ export class RenderSDFLayerMaterial extends ShaderMaterial {
 
           gl_FragColor = apply_colormap(intensity);
           if (frac.x < 0.01 || frac.y < 0.01) gl_FragColor = vec4(0, 0, 0, 1.0);
-          if (dist > 0.0) gl_FragColor = vec4(0, 0, 0, 1.0);
+
+          if (inverse && dist > 0.0) gl_FragColor = vec4(0, 0, 0, 0.0);
+          if (!inverse && dist < 0.0) gl_FragColor = vec4(0, 0, 0, 0.0);
           #else
           float aspect = r;
           vec2 uv = vec2( (vUv.x - 0.5) * aspect, (vUv.y - 0.5)) + vec2(0.5);
@@ -73,7 +77,9 @@ export class RenderSDFLayerMaterial extends ShaderMaterial {
           float intensity = texture( voldata, vec3( uv, layer ) ).r;
 
           gl_FragColor = apply_colormap(intensity);
-          if (dist > 0.0) gl_FragColor = vec4(0, 0, 0, 1.0);
+
+          if (inverse && dist > 0.0) gl_FragColor = vec4(0, 0, 0, 0.0);
+          if (!inverse && dist < 0.0) gl_FragColor = vec4(0, 0, 0, 0.0);
           #endif
           #include <encodings_fragment>
 				}

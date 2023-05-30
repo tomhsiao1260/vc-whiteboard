@@ -1,7 +1,6 @@
 import Stats from 'stats.js'
 import * as THREE from 'three'
 
-import meta from './meta.json'
 import textureGray from './textures/cm_gray.png'
 import textureViridis from './textures/cm_viridis.png'
 
@@ -21,11 +20,13 @@ import { VolumeMaterial } from './VolumeMaterial.js'
 const params = {
     gpuGeneration: true,
     resolution: 1.0,
-    regenerate: () => updateSDF(),
+    regenerate: () => { updateSDF() },
 
     mode: 'layer',
     layer: 0,
-    surface: 1.8
+    surface: 0.005,
+    inverse: false,
+    layers: { select: 0, options: {} },
 }
 
 const volconfig = {
@@ -37,9 +38,9 @@ const volconfig = {
     label: 0.7
 };
 
-const { clip, nrrd, obj } = meta
+let segmentMeta, volumeMeta, volumeTarget, nrrd, clip
 let renderer, camera, scene, gui, stats
-let outputContainer, bvh, geometry, mesh, sdfTex, volumeTex
+let outputContainer, bvh, geometry, mesh, boxHelper, sdfTex, volumeTex
 let generateSdfPass, layerPass, raymarchPass, volumePass
 const inverseBoundsMatrix = new THREE.Matrix4()
 
@@ -51,7 +52,7 @@ const cmtextures = {
 init()
 render()
 
-function init() {
+async function init() {
     outputContainer = document.getElementById('output')
 
     // renderer setup
@@ -77,7 +78,7 @@ function init() {
         0.1,
         50
     )
-    camera.position.set(0, 0, -0.8)
+    camera.position.set(0.2, -0.2, -0.5)
     camera.up.set(0, -1, 0)
     camera.far = 5
     camera.updateProjectionMatrix()
@@ -96,7 +97,10 @@ function init() {
 
     // stats setup
     stats = new Stats()
-    document.body.appendChild(stats.dom)
+    // document.body.appendChild(stats.dom)
+
+    boxHelper = new THREE.Box3Helper(new THREE.Box3())
+    scene.add(boxHelper)
 
     // sdf pass to generate the 3d texture
     generateSdfPass = new FullScreenQuad(new GenerateSDFMaterial())
@@ -107,24 +111,71 @@ function init() {
     // volume pass to render the volume data
     volumePass = new FullScreenQuad(new VolumeMaterial())
 
+    segmentMeta = await fetch('segment/meta.json').then((res) => res.json())
+    volumeMeta = await fetch('volume/meta.json').then((res) => res.json())
+
+    for (let i = 0; i < volumeMeta.nrrd.length; i++) {
+        const { clip } = volumeMeta.nrrd[i]
+        const start = clip.z
+        const end = clip.z + clip.d
+        params.layers.options[ `${start} to ${end}` ] = i
+    }
+
+    await loadModel(params.layers.select)
+
+    updateSDF()
+    rebuildGUI()
+}
+
+async function loadModel(selectIndex) {
+    // dispose previous assets
+    if (sdfTex) { sdfTex.dispose() }
+    if (volumeTex) { volumeTex.dispose() }
+
+    volumeTarget = volumeMeta.nrrd[selectIndex]
+    clip = volumeTarget.clip
+    nrrd = volumeTarget.shape
+
+    // select necessary segment to list
+    const segmentList = []
+
+    for (let i = 0; i < segmentMeta.obj.length; i++) {
+        const segmentTarget = segmentMeta.obj[i]
+        const c0 = volumeTarget.clip
+        const c1 = segmentTarget.clip
+
+        if (c0.x + c0.w >= c1.x && c1.x + c1.w >= c0.x) {
+            if (c0.y + c0.h >= c1.y && c1.y + c1.h >= c0.y) {
+                if (c0.z + c0.d >= c1.z && c1.z + c1.d >= c0.z) {
+                    segmentList.push(segmentTarget.id)
+                }
+            }
+        }
+    }
+
+    // segment loading
     const promiseList = []
     const geometryList = []
 
-    for (let i = 0; i < obj.length; i++) {
+    for (let i = 0; i < segmentList.length; i++) {
         const loading = new OBJLoader()
-            .loadAsync('obj/' + obj[i] + '.obj')
+            .loadAsync('segment/' + segmentList[i] + '.obj')
             .then((object) => { geometryList.push(object.children[0].geometry) })
-            .catch((e) => { console.warn(`{obj[i]} is skipped`) })
 
         promiseList.push(loading)
     }
+    // console.log(segmentList)
 
+
+    // turn all segment into single geometry
     const papyrus = Promise.all(promiseList)
         .then((object) => {
 
             const s = 1 / Math.max(nrrd.w, nrrd.h, nrrd.d)
             geometry = BufferGeometryUtils.mergeGeometries(geometryList)
             const positions = geometry.attributes.position.array
+
+            for (let i = 0; i < geometryList.length; i ++) { geometryList[i].dispose() }
 
             for (let i = 0; i < positions.length; i += 3) {
                   const x = positions[i + 0];
@@ -144,19 +195,19 @@ function init() {
             geometry.computeBoundingBox()
             geometry.boundingBox.max.set( nrrd.w * s / 2,  nrrd.h * s / 2,  nrrd.d * s / 2)
             geometry.boundingBox.min.set(-nrrd.w * s / 2, -nrrd.h * s / 2, -nrrd.d * s / 2)
-            // console.log(geometry.boundingBox)
+            boxHelper.box.copy(geometry.boundingBox)
 
             return new MeshBVH(geometry, { maxLeafTris: 1 })
         })
         .then((result) => {
             bvh = result
 
-            mesh = new THREE.Mesh(geometry, new THREE.MeshStandardMaterial())
+            mesh = new THREE.Mesh(geometry, new THREE.MeshNormalMaterial({ side: THREE.DoubleSide }))
             scene.add(mesh)
         })
 
     const voxel = new NRRDLoader()
-        .loadAsync(nrrd.name)
+        .loadAsync('volume/' + volumeTarget.id + '.nrrd')
         .then((volume) => {   
 
             // THREEJS will select R32F (33326) based on the THREE.RedFormat and THREE.FloatType.
@@ -177,7 +228,7 @@ function init() {
             material.uniforms.size.value.set( volume.xLength, volume.yLength, volume.zLength );
         })
 
-    Promise.all([papyrus, voxel]).then(() => { updateSDF(); rebuildGUI(); });
+    return Promise.all([papyrus, voxel])
 }
 
 // build the gui with parameters based on the selected display mode
@@ -198,23 +249,38 @@ function rebuildGUI() {
 
     const displayFolder = gui.addFolder('display')
     displayFolder
-      .add(params, 'mode', ['geometry', 'volume', 'layer', 'grid layers'])
+      .add(params, 'mode', ['geometry', 'layer', 'grid layers'])
       // .add(params, 'mode', ['geometry', 'raymarching', 'layer', 'grid layers', 'volume'])
       .onChange(() => {
         rebuildGUI()
       })
 
+    if (params.mode === 'geometry') {
+    }
+
     if (params.mode === 'layer') {
-      displayFolder.add(volconfig, 'clim1', 0, 1)
-      displayFolder.add(volconfig, 'clim2', 0, 1)
-      displayFolder.add(params, 'surface', -0.2, 2.0)
-      displayFolder.add(params, 'layer', clip.z, clip.z + clip.d, 1)
+        // displayFolder.add(volconfig, 'clim1', 0, 1)
+        // displayFolder.add(volconfig, 'clim2', 0, 1)
+        displayFolder.add(params, 'inverse')
+        displayFolder.add(params, 'surface', 0.001, 0.02)
+        displayFolder.add(params, 'layer', clip.z, clip.z + clip.d, 1)
+        displayFolder.add(params.layers, 'select', params.layers.options).name('layers').onChange(async () => {
+            await loadModel(params.layers.select)
+            updateSDF()
+            rebuildGUI()
+        })
     }
 
     if (params.mode === 'grid layers') {
-      displayFolder.add(volconfig, 'clim1', 0, 1)
-      displayFolder.add(volconfig, 'clim2', 0, 1)
-      displayFolder.add(params, 'surface', -0.2, 2.0)
+        // displayFolder.add(volconfig, 'clim1', 0, 1)
+        // displayFolder.add(volconfig, 'clim2', 0, 1)
+        displayFolder.add(params, 'inverse')
+        displayFolder.add(params, 'surface', 0.001, 0.02)
+        displayFolder.add(params.layers, 'select', params.layers.options).name('layers').onChange(async () => {
+            await loadModel(params.layers.select)
+            updateSDF()
+            rebuildGUI()
+        })
     }
 
     if (params.mode === 'raymarching') {
@@ -242,11 +308,6 @@ function updateSDF() {
     scaling.set(nrrd.w * s, nrrd.h * s, nrrd.d * s)
     matrix.compose(center, quat, scaling)
     inverseBoundsMatrix.copy(matrix).invert()
-
-    // dispose of the existing sdf
-    if (sdfTex) {
-        sdfTex.dispose()
-    }
 
     const pxWidth = 1 / (nrrd.d * r)
     const halfWidth = 0.5 * pxWidth
@@ -284,7 +345,7 @@ function updateSDF() {
 
     // update the timing display
     const delta = window.performance.now() - startTime
-    outputContainer.innerText = `${delta.toFixed(2)}ms`
+    // outputContainer.innerText = `${delta.toFixed(2)}ms`
 
     rebuildGUI()
 }
@@ -315,6 +376,7 @@ function render() {
         if (texture) material.uniforms.cmdata.value = texture
 
 		material.uniforms.clim.value.set( volconfig.clim1, volconfig.clim2 );
+        material.uniforms.inverse.value = params.inverse;
         material.uniforms.surface.value = params.surface;
         material.uniforms.layer.value = (params.layer - clip.z) / clip.d;
         material.uniforms.volumeAspect.value = clip.w / clip.h;
