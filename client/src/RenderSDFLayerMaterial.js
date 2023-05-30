@@ -13,7 +13,8 @@ export class RenderSDFLayerMaterial extends ShaderMaterial {
         sdfTex: { value: null },
         cmdata: { value: null },
         layer: { value: 0 },
-        layers: { value: 0 },
+        volumeAspect: { value: 0 },
+        screenAspect: { value: 0 },
         clim: { value: new Vector2() },
       },
 
@@ -33,7 +34,8 @@ export class RenderSDFLayerMaterial extends ShaderMaterial {
         uniform sampler3D sdfTex;
         uniform sampler2D cmdata;
         uniform float layer;
-        uniform float layers;
+        uniform float volumeAspect;
+        uniform float screenAspect;
         uniform float surface;
 
         vec4 apply_colormap(float val) {
@@ -42,11 +44,20 @@ export class RenderSDFLayerMaterial extends ShaderMaterial {
         }
 
 				void main() {
+          float r = screenAspect / volumeAspect;
+
           #if DISPLAY_GRID
-          float dim = ceil( sqrt( layers ) );
-					vec2 cell = floor( vUv * dim );
-					vec2 frac = vUv * dim - cell;
-					float zLayer = ( cell.y * dim + cell.x ) / ( dim * dim );
+          float dimH = 5.0;
+          float dimW = floor(r * dimH);
+
+          float aspect = r / (dimW / dimH);
+          vec2 uv = vec2( (vUv.x - 0.5) * aspect, (vUv.y - 0.5)) + vec2(0.5);
+          if ( uv.x < 0.0 || uv.x > 1.0 || uv.y < 0.0 || uv.y > 1.0 ) return;
+
+					vec2 cell = floor( uv * vec2(dimW, dimH) );
+					vec2 frac = uv * vec2(dimW, dimH) - cell;
+					float zLayer = ( cell.y * dimW + cell.x ) / ( dimH * dimW );
+
 					float dist = texture( sdfTex, vec3( frac, zLayer ) ).r - surface;
           float intensity = texture( voldata, vec3( frac, zLayer ) ).r;
 
@@ -54,8 +65,12 @@ export class RenderSDFLayerMaterial extends ShaderMaterial {
           if (frac.x < 0.01 || frac.y < 0.01) gl_FragColor = vec4(0, 0, 0, 1.0);
           if (dist > 0.0) gl_FragColor = vec4(0, 0, 0, 1.0);
           #else
-          float dist = texture( sdfTex, vec3( vUv, layer ) ).r - surface;
-          float intensity = texture( voldata, vec3( vUv, layer ) ).r;
+          float aspect = r;
+          vec2 uv = vec2( (vUv.x - 0.5) * aspect, (vUv.y - 0.5)) + vec2(0.5);
+          if ( uv.x < 0.0 || uv.x > 1.0 || uv.y < 0.0 || uv.y > 1.0 ) return;
+
+          float dist = texture( sdfTex, vec3( uv, layer ) ).r - surface;
+          float intensity = texture( voldata, vec3( uv, layer ) ).r;
 
           gl_FragColor = apply_colormap(intensity);
           if (dist > 0.0) gl_FragColor = vec4(0, 0, 0, 1.0);

@@ -23,14 +23,14 @@ const params = {
     resolution: 1.0,
     regenerate: () => updateSDF(),
 
-    mode: 'geometry',
+    mode: 'layer',
     layer: 0,
     surface: 1.8
 }
 
 const volconfig = {
-    clim1: 0,
-    clim2: 1,
+    clim1: 0.385,
+    clim2: 0.715,
     renderstyle: 'iso',
     renderthreshold: 0.15,
     colormap: 'viridis',
@@ -114,6 +114,7 @@ function init() {
         const loading = new OBJLoader()
             .loadAsync('obj/' + obj[i] + '.obj')
             .then((object) => { geometryList.push(object.children[0].geometry) })
+            .catch((e) => { console.warn(`{obj[i]} is skipped`) })
 
         promiseList.push(loading)
     }
@@ -123,7 +124,6 @@ function init() {
 
             const s = 1 / Math.max(nrrd.w, nrrd.h, nrrd.d)
             geometry = BufferGeometryUtils.mergeGeometries(geometryList)
-            console.log(geometry)
             const positions = geometry.attributes.position.array
 
             for (let i = 0; i < positions.length; i += 3) {
@@ -198,8 +198,8 @@ function rebuildGUI() {
 
     const displayFolder = gui.addFolder('display')
     displayFolder
-      // .add(params, 'mode', ['volume', 'layer', 'grid layers'])
-      .add(params, 'mode', ['geometry', 'raymarching', 'layer', 'grid layers', 'volume'])
+      .add(params, 'mode', ['geometry', 'volume', 'layer', 'grid layers'])
+      // .add(params, 'mode', ['geometry', 'raymarching', 'layer', 'grid layers', 'volume'])
       .onChange(() => {
         rebuildGUI()
       })
@@ -317,7 +317,8 @@ function render() {
 		material.uniforms.clim.value.set( volconfig.clim1, volconfig.clim2 );
         material.uniforms.surface.value = params.surface;
         material.uniforms.layer.value = (params.layer - clip.z) / clip.d;
-        material.uniforms.layers.value = clip.d;
+        material.uniforms.volumeAspect.value = clip.w / clip.h;
+        material.uniforms.screenAspect.value = camera.aspect;
 		material.uniforms.sdfTex.value = sdfTex.texture;
 		tex = sdfTex.texture;
 
