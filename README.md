@@ -5,7 +5,7 @@ A web-based volumetric renderer for <a href="https://scrollprize.org/" target="_
 <h3/>
 
 <p align="center">
-    <img src="https://github.com/tomhsiao1260/volume-viewer/assets/31985811/3e2572fd-8640-435a-bf13-7a48eb45973f" width="800px"/>
+    <img src="https://github.com/tomhsiao1260/segment-viewer/assets/31985811/7196a132-ae03-4e4d-8eaf-95ad24af7dc9" width="800px"/>
 </p>
 
 ## Introduction
