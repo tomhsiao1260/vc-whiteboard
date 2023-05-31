@@ -10,13 +10,14 @@ from tqdm import tqdm
 
 CLIP = { 'x': 0, 'y': 0, 'z': 0, 'w': 8096, 'h': 7888, 'd': 1000 }
 
-RAW_TO_TIF_SAMPLING = 10
+RAW_TO_TIF_SAMPLING    = 10
 TIF_TO_VOLUME_SAMPLING = 1
-CLIP_CHUNK_NUM = 20
+CLIP_CHUNK_NUM         = 20
 
 VOLPKG_DIR  = '../full-scrolls/Scroll1.volpkg'
 VOLUME_ID   = '20230205180739'
 
+# you may don't need to change the path below
 TIF_INPUT   = f'{VOLPKG_DIR}/volumes_small/{VOLUME_ID}'
 NRRD_OUTPUT = './output/volume'
 NRRD_INFO   = './output/volume/meta.json'

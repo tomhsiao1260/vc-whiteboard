@@ -5,6 +5,7 @@ import numpy as np
 
 VOLPKG_DIR = '../full-scrolls/Scroll1.volpkg'
 
+# you may don't need to change the path below
 OBJ_INPUT  = f'{VOLPKG_DIR}/paths'
 OBJ_OUTPUT = './output/segment'
 OBJ_INFO   = './output/segment/meta.json'
