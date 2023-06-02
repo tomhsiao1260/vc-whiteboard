@@ -13,19 +13,11 @@ with open('config.json') as f:
     config = json.load(f)
 
 CLIP           = config['CLIP']
-VOLPKG_DIR     = config['VOLPKG_DIR']
-VOLUME_ID      = config['VOLUME_ID']
-
+TIF_INPUT      = config['TIF_INPUT']
 RAW_SAMPLING   = config['RAW_SAMPLING']
 TIF_SAMPLING   = config['TIF_SAMPLING']
 CLIP_CHUNK_NUM = config['CLIP_CHUNK_NUM']
 
-if(RAW_SAMPLING == 1):
-    VOL_FOLDER = 'volumes'
-else:
-    VOL_FOLDER = 'volumes_small'
-
-TIF_INPUT   = f'{VOLPKG_DIR}/{VOL_FOLDER}/{VOLUME_ID}'
 NRRD_OUTPUT = './output/volume'
 NRRD_INFO   = './output/volume/meta.json'
 

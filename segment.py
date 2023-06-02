@@ -7,14 +7,11 @@ import numpy as np
 with open('config.json') as f:
     config = json.load(f)
 
-CLIP           = config['CLIP']
-CLIP_CHUNK_NUM = config['CLIP_CHUNK_NUM']
-VIEW_SEGMENT   = config['VIEW_SEGMENT']
-VOLPKG_DIR     = config['VOLPKG_DIR']
+OBJ_INPUT = config['OBJ_INPUT']
 
-OBJ_INPUT  = f'{VOLPKG_DIR}/paths'
 OBJ_OUTPUT = './output/segment'
 OBJ_INFO   = './output/segment/meta.json'
+
 
 def parse_obj(filename):
     vertices = []
@@ -96,16 +93,6 @@ def processing(data):
 
     return p_data
 
-def box_generator(CLIP):
-    size     = np.array([ CLIP['w'], CLIP['h'], CLIP['d'] ])
-    minPoint = np.array([ CLIP['x'], CLIP['y'], CLIP['z'] ])
-    center   = minPoint + size / 2
-
-    data = parse_obj('mask/box.obj')
-    data['vertices'] = data['vertices'] + center
-
-    return data
-
 # clear .obj output folder
 shutil.rmtree(OBJ_OUTPUT, ignore_errors=True)
 os.makedirs(OBJ_OUTPUT)
@@ -113,7 +100,7 @@ os.makedirs(OBJ_OUTPUT)
 # copy .obj files from .volpkg
 SEGMENT_LIST = []
 
-if (VIEW_SEGMENT):
+if (OBJ_INPUT != ''):
     subfolders = [f.path for f in os.scandir(OBJ_INPUT) if f.is_dir()]
 
     for subfolder in subfolders:
@@ -123,25 +110,10 @@ if (VIEW_SEGMENT):
         if os.path.isfile(obj_file_path):
             shutil.copy(obj_file_path , OBJ_OUTPUT)
             SEGMENT_LIST.append(folder_name)
-else:
-    for i in range(CLIP_CHUNK_NUM):
-        SUB_CLIP = CLIP.copy()
-        SUB_CLIP['z'] = CLIP['z'] + (CLIP['d'] // CLIP_CHUNK_NUM) * i
-        SUB_CLIP['d'] = CLIP['d'] // CLIP_CHUNK_NUM
-
-        if (i == CLIP_CHUNK_NUM - 1):
-            SUB_CLIP['d'] = CLIP['z'] + CLIP['d'] - SUB_CLIP['z']
-
-        DIGIT_NUM = len(str(CLIP_CHUNK_NUM))
-        SEGMENT_ID = str(i).zfill(DIGIT_NUM)
-        SEGMENT_LIST.append(SEGMENT_ID)
-
-        data = box_generator(SUB_CLIP)
-        filename = f'{OBJ_OUTPUT}/{SEGMENT_ID}.obj'
-        save_obj(filename, data)
 
 # parse .obj files and get relevant info and copy to client
 meta = {}
+meta['view_segment'] = OBJ_INPUT != ''
 meta['obj'] = []
 
 for SEGMENT_ID in SEGMENT_LIST:
@@ -158,9 +130,6 @@ for SEGMENT_ID in SEGMENT_LIST:
 
     info = {}
     info['id'] = SEGMENT_ID
-    # info['boundingBox'] = {}
-    # info['boundingBox']['min'] = [round(v, 2) for v in p_data['boundingBox']['min']]
-    # info['boundingBox']['max'] = [round(v, 2) for v in p_data['boundingBox']['max']]
     info['clip'] = {}
     info['clip']['x'] = int(c[0])
     info['clip']['y'] = int(c[1])

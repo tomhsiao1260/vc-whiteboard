@@ -172,30 +172,46 @@ async function loadModel(selectIndex) {
         .then((object) => {
 
             const s = 1 / Math.max(nrrd.w, nrrd.h, nrrd.d)
-            geometry = BufferGeometryUtils.mergeGeometries(geometryList)
-            const positions = geometry.attributes.position.array
+
+            if (!segmentMeta['view_segment']) {
+                geometry = BufferGeometryUtils.mergeGeometries([ new THREE.BoxGeometry(0.01, 0.01, 0.01) ])
+            }
+            // no segment here, show nothing
+            if (segmentMeta['view_segment'] && !geometryList.length) {
+                geometry = BufferGeometryUtils.mergeGeometries([ new THREE.BoxGeometry(0.01, 0.01, 0.01) ])
+                const positions = geometry.attributes.position.array
+                for (let i = 0; i < positions.length; i += 3) { positions[i + 2] += 10 }
+            }
+            // put segment points to the right position
+            if (segmentMeta['view_segment'] && geometryList.length) {
+                geometry = BufferGeometryUtils.mergeGeometries(geometryList)
+                const positions = geometry.attributes.position.array
+
+                for (let i = 0; i < positions.length; i += 3) {
+                    const x = positions[i + 0];
+                    const y = positions[i + 1];
+                    const z = positions[i + 2];
+
+                    const newX = nrrd.w * s * ((x - clip.x) / clip.w - 0.5)
+                    const newY = nrrd.h * s * ((y - clip.y) / clip.h - 0.5)
+                    const newZ = nrrd.d * s * ((z - clip.z) / clip.d - 0.5)
+
+                    positions[i + 0] = newX;
+                    positions[i + 1] = newY;
+                    positions[i + 2] = newZ;
+                }
+            }
 
             for (let i = 0; i < geometryList.length; i ++) { geometryList[i].dispose() }
-
-            for (let i = 0; i < positions.length; i += 3) {
-                  const x = positions[i + 0];
-                  const y = positions[i + 1];
-                  const z = positions[i + 2];
-
-                  const newX = nrrd.w * s * ((x - clip.x) / clip.w - 0.5)
-                  const newY = nrrd.h * s * ((y - clip.y) / clip.h - 0.5)
-                  const newZ = nrrd.d * s * ((z - clip.z) / clip.d - 0.5)
-
-                  positions[i + 0] = newX;
-                  positions[i + 1] = newY;
-                  positions[i + 2] = newZ;
-            }
             geometry.attributes.position.needsUpdate = true
 
             geometry.computeBoundingBox()
             geometry.boundingBox.max.set( nrrd.w * s / 2,  nrrd.h * s / 2,  nrrd.d * s / 2)
             geometry.boundingBox.min.set(-nrrd.w * s / 2, -nrrd.h * s / 2, -nrrd.d * s / 2)
             boxHelper.box.copy(geometry.boundingBox)
+
+            const maxDistance = geometry.boundingBox.min.distanceTo(geometry.boundingBox.max) / 2
+            params.surface = maxDistance
 
             return new MeshBVH(geometry, { maxLeafTris: 1 })
         })
@@ -233,15 +249,11 @@ async function loadModel(selectIndex) {
 
 // build the gui with parameters based on the selected display mode
 function rebuildGUI() {
-    if (gui) {
-        gui.destroy()
-    }
+    if (gui) { gui.destroy() }
 
-    const box = geometry.boundingBox
-    const maxDistance = box.min.distanceTo(box.max) / 2
     params.layer = Math.max(clip.z, params.layer)
     params.layer = Math.min(clip.z + clip.d, params.layer)
-    params.surface = maxDistance
+    const maxDistance = geometry.boundingBox.min.distanceTo(geometry.boundingBox.max) / 2
 
     gui = new GUI()
 
@@ -259,6 +271,11 @@ function rebuildGUI() {
       })
 
     if (params.mode === 'geometry') {
+        displayFolder.add(params.layers, 'select', params.layers.options).name('layers').onChange(async () => {
+            await loadModel(params.layers.select)
+            updateSDF()
+            rebuildGUI()
+        })
     }
 
     if (params.mode === 'layer') {
@@ -287,7 +304,12 @@ function rebuildGUI() {
     }
 
     if (params.mode === 'raymarching') {
-      displayFolder.add(params, 'surface', 0.001, maxDistance)
+        displayFolder.add(params, 'surface', 0.001, maxDistance)
+        displayFolder.add(params.layers, 'select', params.layers.options).name('layers').onChange(async () => {
+            await loadModel(params.layers.select)
+            updateSDF()
+            rebuildGUI()
+        })
     }
 
     if (params.mode === 'volume') {
