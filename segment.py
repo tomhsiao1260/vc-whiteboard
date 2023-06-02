@@ -3,9 +3,15 @@ import json
 import shutil
 import numpy as np
 
-VOLPKG_DIR = '../full-scrolls/Scroll1.volpkg'
+# config & path
+with open('config.json') as f:
+    config = json.load(f)
 
-# you may don't need to change the path below
+CLIP           = config['CLIP']
+CLIP_CHUNK_NUM = config['CLIP_CHUNK_NUM']
+VIEW_SEGMENT   = config['VIEW_SEGMENT']
+VOLPKG_DIR     = config['VOLPKG_DIR']
+
 OBJ_INPUT  = f'{VOLPKG_DIR}/paths'
 OBJ_OUTPUT = './output/segment'
 OBJ_INFO   = './output/segment/meta.json'
@@ -25,7 +31,7 @@ def parse_obj(filename):
             elif line.startswith('vt '):
                 uvs.append([float(x) for x in line[3:].split()])
             elif line.startswith('f '):
-                indices = [int(x.split('/')[0]) - 1 for x in line.split()[1:]]
+                indices = [x.split('/') for x in line.split()[1:]]
                 faces.append(indices)
 
     data = {}
@@ -46,15 +52,17 @@ def save_obj(filename, data):
 
         for i in range(len(vertices)):
             vertex = vertices[i]
-            normal = normals[i]
             f.write(f"v {' '.join(str(x) for x in vertex)}\n")
+
+        for i in range(len(normals)):
+            normal = normals[i]
             f.write(f"vn {' '.join(str(x) for x in normal)}\n")
 
         for uv in uvs:
             f.write(f"vt {' '.join(str(x) for x in uv)}\n")
 
         for face in faces:
-            indices = ' '.join(f"{x+1}/{x+1}/{x+1}" for x in face)
+            indices = ' '.join(['/'.join(map(str, vertex)) for vertex in face])
             f.write(f"f {indices}\n")
 
 def processing(data):
@@ -88,21 +96,49 @@ def processing(data):
 
     return p_data
 
+def box_generator(CLIP):
+    size     = np.array([ CLIP['w'], CLIP['h'], CLIP['d'] ])
+    minPoint = np.array([ CLIP['x'], CLIP['y'], CLIP['z'] ])
+    center   = minPoint + size / 2
+
+    data = parse_obj('mask/box.obj')
+    data['vertices'] = data['vertices'] + center
+
+    return data
+
 # clear .obj output folder
 shutil.rmtree(OBJ_OUTPUT, ignore_errors=True)
 os.makedirs(OBJ_OUTPUT)
 
 # copy .obj files from .volpkg
 SEGMENT_LIST = []
-subfolders = [f.path for f in os.scandir(OBJ_INPUT) if f.is_dir()]
 
-for subfolder in subfolders:
-    folder_name = os.path.basename(subfolder)
-    obj_file_path = os.path.join(subfolder, folder_name + '.obj')
+if (VIEW_SEGMENT):
+    subfolders = [f.path for f in os.scandir(OBJ_INPUT) if f.is_dir()]
 
-    if os.path.isfile(obj_file_path):
-        shutil.copy(obj_file_path , OBJ_OUTPUT)
-        SEGMENT_LIST.append(folder_name)
+    for subfolder in subfolders:
+        folder_name = os.path.basename(subfolder)
+        obj_file_path = os.path.join(subfolder, folder_name + '.obj')
+
+        if os.path.isfile(obj_file_path):
+            shutil.copy(obj_file_path , OBJ_OUTPUT)
+            SEGMENT_LIST.append(folder_name)
+else:
+    for i in range(CLIP_CHUNK_NUM):
+        SUB_CLIP = CLIP.copy()
+        SUB_CLIP['z'] = CLIP['z'] + (CLIP['d'] // CLIP_CHUNK_NUM) * i
+        SUB_CLIP['d'] = CLIP['d'] // CLIP_CHUNK_NUM
+
+        if (i == CLIP_CHUNK_NUM - 1):
+            SUB_CLIP['d'] = CLIP['z'] + CLIP['d'] - SUB_CLIP['z']
+
+        DIGIT_NUM = len(str(CLIP_CHUNK_NUM))
+        SEGMENT_ID = str(i).zfill(DIGIT_NUM)
+        SEGMENT_LIST.append(SEGMENT_ID)
+
+        data = box_generator(SUB_CLIP)
+        filename = f'{OBJ_OUTPUT}/{SEGMENT_ID}.obj'
+        save_obj(filename, data)
 
 # parse .obj files and get relevant info and copy to client
 meta = {}
@@ -138,5 +174,6 @@ for SEGMENT_ID in SEGMENT_LIST:
 with open(OBJ_INFO, "w") as outfile:
     json.dump(meta, outfile, indent=4)
 
+shutil.rmtree('client/public/segment', ignore_errors=True)
 shutil.copytree(OBJ_OUTPUT, 'client/public/segment', dirs_exist_ok=True)
 

@@ -8,17 +8,24 @@ import numpy as np
 from PIL import Image
 from tqdm import tqdm
 
-CLIP = { 'x': 0, 'y': 0, 'z': 0, 'w': 8096, 'h': 7888, 'd': 1000 }
+# config & path
+with open('config.json') as f:
+    config = json.load(f)
 
-RAW_TO_TIF_SAMPLING    = 10
-TIF_TO_VOLUME_SAMPLING = 1
-CLIP_CHUNK_NUM         = 20
+CLIP           = config['CLIP']
+VOLPKG_DIR     = config['VOLPKG_DIR']
+VOLUME_ID      = config['VOLUME_ID']
 
-VOLPKG_DIR  = '../full-scrolls/Scroll1.volpkg'
-VOLUME_ID   = '20230205180739'
+RAW_SAMPLING   = config['RAW_SAMPLING']
+TIF_SAMPLING   = config['TIF_SAMPLING']
+CLIP_CHUNK_NUM = config['CLIP_CHUNK_NUM']
 
-# you may don't need to change the path below
-TIF_INPUT   = f'{VOLPKG_DIR}/volumes_small/{VOLUME_ID}'
+if(RAW_SAMPLING == 1):
+    VOL_FOLDER = 'volumes'
+else:
+    VOL_FOLDER = 'volumes_small'
+
+TIF_INPUT   = f'{VOLPKG_DIR}/{VOL_FOLDER}/{VOLUME_ID}'
 NRRD_OUTPUT = './output/volume'
 NRRD_INFO   = './output/volume/meta.json'
 
@@ -42,9 +49,9 @@ def nrrd_list(CLIP, CLIP_CHUNK_NUM):
 
     return NRRD_LIST
 
-def read_tif(TIF_INPUT, CLIP):
+def read_tif(TIF_INPUT, CLIP, RAW_SAMPLING, TIF_SAMPLING):
     # change to tif data clip
-    rs = RAW_TO_TIF_SAMPLING
+    rs = RAW_SAMPLING
     c  = { key: round(value / rs) for key, value in CLIP.items() }
 
     names = sorted(glob.glob(TIF_INPUT + '/*tif'))
@@ -57,7 +64,7 @@ def read_tif(TIF_INPUT, CLIP):
         image_stack[:, :, i] = np.transpose(image, (1, 0))
 
     # sampling tif stack
-    ts = TIF_TO_VOLUME_SAMPLING
+    ts = TIF_SAMPLING
 
     pad_x = (ts - image_stack.shape[0] % ts) % ts
     pad_y = (ts - image_stack.shape[1] % ts) % ts
@@ -91,7 +98,7 @@ for NRRD_CHUNK in NRRD_LIST:
     NRRD_SUBCLIP = NRRD_CHUNK['clip']
 
     # extract image stack from .tif files
-    image_stack = read_tif(TIF_INPUT, NRRD_SUBCLIP)
+    image_stack = read_tif(TIF_INPUT, NRRD_SUBCLIP, RAW_SAMPLING, TIF_SAMPLING)
 
     NRRD_CHUNK['shape'] = {}
     NRRD_CHUNK['shape']['w'] = image_stack.shape[0]
@@ -108,4 +115,5 @@ meta['nrrd'] = NRRD_LIST
 with open(NRRD_INFO, "w") as outfile:
     json.dump(meta, outfile, indent=4)
 
+shutil.rmtree('client/public/volume', ignore_errors=True)
 shutil.copytree(NRRD_OUTPUT, 'client/public/volume', dirs_exist_ok=True)

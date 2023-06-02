@@ -237,8 +237,11 @@ function rebuildGUI() {
         gui.destroy()
     }
 
+    const box = geometry.boundingBox
+    const maxDistance = box.min.distanceTo(box.max) / 2
     params.layer = Math.max(clip.z, params.layer)
     params.layer = Math.min(clip.z + clip.d, params.layer)
+    params.surface = maxDistance
 
     gui = new GUI()
 
@@ -249,8 +252,8 @@ function rebuildGUI() {
 
     const displayFolder = gui.addFolder('display')
     displayFolder
-      .add(params, 'mode', ['geometry', 'layer', 'grid layers'])
-      // .add(params, 'mode', ['geometry', 'raymarching', 'layer', 'grid layers', 'volume'])
+      // .add(params, 'mode', ['geometry', 'layer', 'grid layers'])
+      .add(params, 'mode', ['geometry', 'raymarching', 'layer', 'grid layers', 'volume'])
       .onChange(() => {
         rebuildGUI()
       })
@@ -262,7 +265,7 @@ function rebuildGUI() {
         // displayFolder.add(volconfig, 'clim1', 0, 1)
         // displayFolder.add(volconfig, 'clim2', 0, 1)
         displayFolder.add(params, 'inverse')
-        displayFolder.add(params, 'surface', 0.001, 0.02)
+        displayFolder.add(params, 'surface', 0.001, maxDistance)
         displayFolder.add(params, 'layer', clip.z, clip.z + clip.d, 1)
         displayFolder.add(params.layers, 'select', params.layers.options).name('layers').onChange(async () => {
             await loadModel(params.layers.select)
@@ -275,7 +278,7 @@ function rebuildGUI() {
         // displayFolder.add(volconfig, 'clim1', 0, 1)
         // displayFolder.add(volconfig, 'clim2', 0, 1)
         displayFolder.add(params, 'inverse')
-        displayFolder.add(params, 'surface', 0.001, 0.02)
+        displayFolder.add(params, 'surface', 0.001, maxDistance)
         displayFolder.add(params.layers, 'select', params.layers.options).name('layers').onChange(async () => {
             await loadModel(params.layers.select)
             updateSDF()
@@ -284,14 +287,14 @@ function rebuildGUI() {
     }
 
     if (params.mode === 'raymarching') {
-      displayFolder.add(params, 'surface', -0.2, 2.0)
+      displayFolder.add(params, 'surface', 0.001, maxDistance)
     }
 
     if (params.mode === 'volume') {
         displayFolder.add(volconfig, 'renderstyle', ['mip', 'iso'])
         displayFolder.add(volconfig, 'clim1', 0, 1)
         displayFolder.add(volconfig, 'clim2', 0, 1)
-        displayFolder.add(params, 'surface', -0.2, 2.0)
+        displayFolder.add(params, 'surface', 0.001, maxDistance)
         displayFolder.add(volconfig, 'renderthreshold', 0, 1)
     }
 }
