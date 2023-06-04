@@ -1,10 +1,10 @@
 {
-  "CLIP": { "x": 2653, "y": 2597, "z": 5, "w": 205, "h": 184, "d": 69 },
+  "CLIP": { "x": 0, "y": 0, "z": 0, "w": 8096, "h": 7888, "d": 14370 },
 
-  "TIF_INPUT": "../full-scrolls/Scroll1.volpkg/volumes/20230205180739",
+  "TIF_INPUT": "../full-scrolls/Scroll1.volpkg/volumes_small/20230205180739",
   "OBJ_INPUT": "../full-scrolls/Scroll1.volpkg/paths",
 
-  "RAW_SAMPLING": 1,
+  "RAW_SAMPLING": 10,
   "TIF_SAMPLING": 1,
-  "CLIP_CHUNK_NUM": 1
+  "SUBCLIP_DEPTH": 50
 }

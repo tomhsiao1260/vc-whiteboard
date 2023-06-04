@@ -12,25 +12,26 @@ from tqdm import tqdm
 with open('config.json') as f:
     config = json.load(f)
 
-CLIP           = config['CLIP']
-TIF_INPUT      = config['TIF_INPUT']
-RAW_SAMPLING   = config['RAW_SAMPLING']
-TIF_SAMPLING   = config['TIF_SAMPLING']
-CLIP_CHUNK_NUM = config['CLIP_CHUNK_NUM']
+CLIP          = config['CLIP']
+TIF_INPUT     = config['TIF_INPUT']
+RAW_SAMPLING  = config['RAW_SAMPLING']
+TIF_SAMPLING  = config['TIF_SAMPLING']
+SUBCLIP_DEPTH = config['SUBCLIP_DEPTH']
 
 NRRD_OUTPUT = './output/volume'
 NRRD_INFO   = './output/volume/meta.json'
 
-def nrrd_list(CLIP, CLIP_CHUNK_NUM):
+def nrrd_list(CLIP, SUBCLIP_DEPTH):
     NRRD_LIST = []
-    DIGIT_NUM = len(str(CLIP_CHUNK_NUM))
+    SUBCLIP_NUM = math.ceil(CLIP['d'] / SUBCLIP_DEPTH)
+    DIGIT_NUM = len(str(SUBCLIP_NUM))
 
-    for i in range(CLIP_CHUNK_NUM):
+    for i in range(SUBCLIP_NUM):
         SUB_CLIP = CLIP.copy()
-        SUB_CLIP['z'] = CLIP['z'] + (CLIP['d'] // CLIP_CHUNK_NUM) * i
-        SUB_CLIP['d'] = CLIP['d'] // CLIP_CHUNK_NUM
+        SUB_CLIP['z'] = CLIP['z'] + SUBCLIP_DEPTH * i
+        SUB_CLIP['d'] = SUBCLIP_DEPTH
 
-        if (i == CLIP_CHUNK_NUM - 1):
+        if (i == SUBCLIP_NUM - 1):
             SUB_CLIP['d'] = CLIP['z'] + CLIP['d'] - SUB_CLIP['z']
 
         info = {}
@@ -82,7 +83,7 @@ shutil.rmtree(NRRD_OUTPUT, ignore_errors=True)
 os.makedirs(NRRD_OUTPUT)
 
 # generate nrrd list
-NRRD_LIST = nrrd_list(CLIP, CLIP_CHUNK_NUM)
+NRRD_LIST = nrrd_list(CLIP, SUBCLIP_DEPTH)
 
 # generate .nrrd files from .tif files
 for NRRD_CHUNK in NRRD_LIST:
