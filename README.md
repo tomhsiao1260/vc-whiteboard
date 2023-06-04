@@ -38,24 +38,24 @@ cd client && npm install
 
 ## Getting Started
 
-Now, we need to give this repo the data you want to see. There's a file called `volume.py` for converting the `.tif` data into `.nrrd` format which can be used for rendering via this application. In this file, enter your `volpkg` directory, `volume` id info.
+We need to give this repo the data you want to see. The configuration is written in `config.json`. `TIF_INPUT` is the `.tif` files directory and `OBJ_INPUT` is the segmentation `.obj` paths directory.
 
 ```python
-VOLPKG_DIR = './example.volpkg'
-VOLUME_ID  = '20230205180739'
+TIF_INPUT: "../full-scrolls/Scroll1.volpkg/volumes_small/20230205180739"
+OBJ_INPUT: "../full-scrolls/Scroll1.volpkg/paths"
 ```
 
-Choose a clipped part that you want to visualize. The `CLIP` define a bounding box which `x`, `y`, `z` refer to the smallest point coordinate and `w`, `h`, `d` refer to clipped width, height and depth in raw CT scan volume data.
+Choose a clipped part that you want to visualize. The `CLIP` define a bounding box in raw CT scan data which `x`, `y`, `z` refer to the smallest point coordinate and `w`, `h`, `d` refer to clipped width, height and depth.
 
 ```python
 CLIP = { 'x': 0, 'y': 0, 'z': 0, 'w': 8096, 'h': 7888, 'd': 1000 }
 
-RAW_TO_TIF_SAMPLING    = 10    # volume: 1, volume_small: 10
-TIF_TO_VOLUME_SAMPLING = 1     # n means compress to n^3 smaller
-CLIP_CHUNK_NUM         = 20    # divided into n chunks along z-axis
+RAW_SAMPLING    = 10    # volumes: 1, volumes_small: 10
+TIF_SAMPLING    = 1     # n means compress to n^3 smaller
+CLIP_CHUNK_NUM  = 20    # divided into n chunks along z-axis
 ```
 
-There's another file called `segment.py` which can handle segment `.obj` files we need. Don't forget to update `VOLPKG_DIR` in it as well. Then, run the python scripts. It may take a while. Once finished, you will find some `.obj` and `nrrd` files generated in `./output/segment` and `./output/volume` folder, respectively.
+There's a file called `volume.py` for converting the `.tif` data into `.nrrd` format which can be used for rendering via this application. Another file called `segment.py` which can handle segment `.obj` files we need. Let's run these python scripts. It may take a while. Once finished, you will find some `.obj` and `nrrd` files generated in `./output/segment` and `./output/volume` folder, respectively.
 
 ```python
 python segment.py
