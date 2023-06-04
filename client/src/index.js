@@ -20,7 +20,7 @@ import { VolumeMaterial } from './VolumeMaterial.js'
 const params = {
     gpuGeneration: true,
     resolution: 1.0,
-    regenerate: () => { updateSDF() },
+    regenerate: () => { updateSDF(); rebuildGUI(); },
 
     mode: 'layer',
     layer: 0,
@@ -50,7 +50,7 @@ const cmtextures = {
 };
 
 init()
-render()
+// render()
 
 async function init() {
     outputContainer = document.getElementById('output')
@@ -93,7 +93,8 @@ async function init() {
         false
     )
 
-    new OrbitControls(camera, renderer.domElement)
+    const controls = new OrbitControls(camera, renderer.domElement)
+    controls.addEventListener( 'change', render );
 
     // stats setup
     stats = new Stats()
@@ -125,6 +126,7 @@ async function init() {
 
     updateSDF()
     rebuildGUI()
+    render()
 }
 
 async function loadModel(selectIndex) {
@@ -268,6 +270,7 @@ function rebuildGUI() {
       .add(params, 'mode', ['geometry', 'raymarching', 'layer', 'grid layers', 'volume'])
       .onChange(() => {
         rebuildGUI()
+        render()
       })
 
     if (params.mode === 'geometry') {
@@ -275,49 +278,53 @@ function rebuildGUI() {
             await loadModel(params.layers.select)
             updateSDF()
             rebuildGUI()
+            render()
         })
     }
 
     if (params.mode === 'layer') {
         // displayFolder.add(volconfig, 'clim1', 0, 1)
         // displayFolder.add(volconfig, 'clim2', 0, 1)
-        displayFolder.add(params, 'inverse')
-        displayFolder.add(params, 'surface', 0.001, maxDistance)
-        displayFolder.add(params, 'layer', clip.z, clip.z + clip.d, 1)
+        displayFolder.add(params, 'inverse').onChange(render)
+        displayFolder.add(params, 'surface', 0.001, maxDistance).onChange(render)
+        displayFolder.add(params, 'layer', clip.z, clip.z + clip.d, 1).onChange(render)
         displayFolder.add(params.layers, 'select', params.layers.options).name('layers').onChange(async () => {
             await loadModel(params.layers.select)
             updateSDF()
             rebuildGUI()
+            render()
         })
     }
 
     if (params.mode === 'grid layers') {
-        // displayFolder.add(volconfig, 'clim1', 0, 1)
-        // displayFolder.add(volconfig, 'clim2', 0, 1)
-        displayFolder.add(params, 'inverse')
-        displayFolder.add(params, 'surface', 0.001, maxDistance)
+        // displayFolder.add(volconfig, 'clim1', 0, 1).onChange(render)
+        // displayFolder.add(volconfig, 'clim2', 0, 1).onChange(render)
+        displayFolder.add(params, 'inverse').onChange(render)
+        displayFolder.add(params, 'surface', 0.001, maxDistance).onChange(render)
         displayFolder.add(params.layers, 'select', params.layers.options).name('layers').onChange(async () => {
             await loadModel(params.layers.select)
             updateSDF()
             rebuildGUI()
+            render()
         })
     }
 
     if (params.mode === 'raymarching') {
-        displayFolder.add(params, 'surface', 0.001, maxDistance)
+        displayFolder.add(params, 'surface', 0.001, maxDistance).onChange(render)
         displayFolder.add(params.layers, 'select', params.layers.options).name('layers').onChange(async () => {
             await loadModel(params.layers.select)
             updateSDF()
             rebuildGUI()
+            render()
         })
     }
 
     if (params.mode === 'volume') {
-        displayFolder.add(volconfig, 'renderstyle', ['mip', 'iso'])
-        displayFolder.add(volconfig, 'clim1', 0, 1)
-        displayFolder.add(volconfig, 'clim2', 0, 1)
-        displayFolder.add(params, 'surface', 0.001, maxDistance)
-        displayFolder.add(volconfig, 'renderthreshold', 0, 1)
+        displayFolder.add(volconfig, 'renderstyle', ['mip', 'iso']).onChange(render)
+        displayFolder.add(volconfig, 'clim1', 0, 1).onChange(render)
+        displayFolder.add(volconfig, 'clim2', 0, 1).onChange(render)
+        displayFolder.add(params, 'surface', 0.001, maxDistance).onChange(render)
+        displayFolder.add(volconfig, 'renderthreshold', 0, 1).onChange(render)
     }
 }
 
@@ -371,14 +378,12 @@ function updateSDF() {
     // update the timing display
     const delta = window.performance.now() - startTime
     // outputContainer.innerText = `${delta.toFixed(2)}ms`
-
-    rebuildGUI()
 }
 
 function render() {
 
     stats.update();
-    requestAnimationFrame( render );
+    // requestAnimationFrame( render );
 
     if ( ! sdfTex ) {
 
