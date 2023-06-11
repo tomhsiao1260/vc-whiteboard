@@ -116,6 +116,9 @@ meta = {}
 meta['view_segment'] = OBJ_INPUT != ''
 meta['obj'] = []
 
+if len(SEGMENT_LIST) == 0:
+    raise Exception('No .obj files found in .volpkg folder')
+
 for SEGMENT_ID in SEGMENT_LIST:
     filename = f'{OBJ_OUTPUT}/{SEGMENT_ID}.obj'
 
