@@ -110,11 +110,14 @@ if (OBJ_INPUT != ''):
         if os.path.isfile(obj_file_path):
             shutil.copy(obj_file_path , OBJ_OUTPUT)
             SEGMENT_LIST.append(folder_name)
+        else:
+            raise RuntimeError(f'No .obj file found in {subfolder}. Please check your .volpkg folder.')
 
 # parse .obj files and get relevant info and copy to client
 meta = {}
 meta['view_segment'] = OBJ_INPUT != ''
 meta['obj'] = []
+
 
 for SEGMENT_ID in SEGMENT_LIST:
     filename = f'{OBJ_OUTPUT}/{SEGMENT_ID}.obj'
