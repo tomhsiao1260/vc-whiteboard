@@ -45,11 +45,10 @@ TIF_INPUT: "../full-scrolls/Scroll1.volpkg/volumes_small/20230205180739"
 OBJ_INPUT: "../full-scrolls/Scroll1.volpkg/paths"
 ```
 
-::: info 
-:warning: 
-If you don't have data ready, please follow [Tutorial 2: Scanning](https://scrollprize.org/tutorial2)
-to acquire the data you want to visualize. Use the `campfire dataset` for the quickstart.
-:::
+> **Note** 
+> :warning: 
+> If you don't have data ready, please follow [Tutorial 2: Scanning](https://scrollprize.org/tutorial2)
+> to acquire the data you want to visualize. Use the `campfire dataset` for the quickstart.
 
 Choose a clipped part that you want to visualize. The `CLIP` define a bounding box in raw CT scan data which `x`, `y`, `z` refer to the smallest point coordinate and `w`, `h`, `d` refer to clipped width, height and depth.
 
