@@ -45,7 +45,7 @@ TIF_INPUT: "../full-scrolls/Scroll1.volpkg/volumes_small/20230205180739"
 OBJ_INPUT: "../full-scrolls/Scroll1.volpkg/paths"
 ```
 
-:::info 
+::: info 
 :warning: 
 If you don't have data ready, please follow [Tutorial 2: Scanning](https://scrollprize.org/tutorial2)
 to acquire the data you want to visualize. Use the `campfire dataset` for the quickstart.
