@@ -45,6 +45,11 @@ TIF_INPUT: "../full-scrolls/Scroll1.volpkg/volumes_small/20230205180739"
 OBJ_INPUT: "../full-scrolls/Scroll1.volpkg/paths"
 ```
 
+> **Note** 
+> :warning: 
+> If you don't have data ready, please follow [Tutorial 2: Scanning](https://scrollprize.org/tutorial2)
+> to acquire the data you want to visualize. Use the `campfire dataset` for the quickstart.
+
 Choose a clipped part that you want to visualize. The `CLIP` define a bounding box in raw CT scan data which `x`, `y`, `z` refer to the smallest point coordinate and `w`, `h`, `d` refer to clipped width, height and depth.
 
 ```python
@@ -53,6 +58,22 @@ CLIP = { "x": 0, "y": 0, "z": 0, "w": 8096, "h": 7888, "d": 14370 }
 RAW_SAMPLING    = 10    # volumes: 1, volumes_small: 10
 TIF_SAMPLING    = 1     # n means compress to n^3 smaller
 SUBCLIP_DEPTH   = 50    # depth value for each subclip
+```
+
+Create a `config.json` file and put the following content into it. You can also use `cat` command to do this.
+```
+cat <<EOT >> config.json
+{
+  "CLIP": { "x": 0, "y": 0, "z": 0, "w": 8096, "h": 7888, "d": 14370 },
+
+  "TIF_INPUT": "../<your_data_dir>/<your_volume_dir>/<segment_id>",
+  "OBJ_INPUT": "../<your_data_dir>/paths",
+
+  "RAW_SAMPLING": 10,
+  "TIF_SAMPLING": 1,
+  "SUBCLIP_DEPTH": 50
+}
+EOT
 ```
 
 There's a file called `volume.py` for converting the `.tif` data into `.nrrd` format which can be used for rendering via this application. Another file called `segment.py` which can handle segment `.obj` files we need. Let's run these python scripts. It may take a while. Once finished, you will find some `.obj` and `nrrd` files generated in `./output/segment` and `./output/volume` folder, respectively.
