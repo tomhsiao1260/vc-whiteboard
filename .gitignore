@@ -12,4 +12,5 @@ __pycache__/
 /*.volpkg/*
 !/*.volpkg/.gitkeep
 
+config.json
 client/textures/inklabels.png

@@ -3,6 +3,10 @@ import json
 import shutil
 import numpy as np
 
+if not os.path.exists('config.json'):
+    print('config.json not found')
+    exit()
+
 # config & path
 with open('config.json') as f:
     config = json.load(f)

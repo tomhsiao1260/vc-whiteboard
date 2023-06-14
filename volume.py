@@ -8,6 +8,10 @@ import numpy as np
 from PIL import Image
 from tqdm import tqdm
 
+if not os.path.exists('config.json'):
+    print('config.json not found')
+    exit()
+
 # config & path
 with open('config.json') as f:
     config = json.load(f)
