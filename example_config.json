@@ -4,7 +4,7 @@
   "TIF_INPUT": "../full-scrolls/Scroll1.volpkg/volumes/20230205180739",
   "OBJ_INPUT": "../full-scrolls/Scroll1.volpkg/paths",
 
-  "RAW_SAMPLING": 10,
+  "RAW_SAMPLING": 1,
   "TIF_SAMPLING": 1,
   "SUBCLIP_DEPTH": 69
 }
