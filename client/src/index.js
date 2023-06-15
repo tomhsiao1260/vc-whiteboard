@@ -32,7 +32,7 @@ const params = {
 const volconfig = {
     clim1: 0.385,
     clim2: 0.715,
-    renderstyle: 'iso',
+    renderstyle: 'mip',
     renderthreshold: 0.15,
     colormap: 'viridis',
     label: 0.7
@@ -78,7 +78,7 @@ async function init() {
         0.1,
         50
     )
-    camera.position.set(0.2, -0.2, -0.5)
+    camera.position.set(0.4, -0.4, -1.0)
     camera.up.set(0, -1, 0)
     camera.far = 5
     camera.updateProjectionMatrix()
@@ -133,6 +133,11 @@ async function loadModel(selectIndex) {
     // dispose previous assets
     if (sdfTex) { sdfTex.dispose() }
     if (volumeTex) { volumeTex.dispose() }
+    if (mesh) {
+        mesh.geometry.dispose()
+        mesh.material.dispose()
+        group.remove(mesh)
+    }
 
     volumeTarget = volumeMeta.nrrd[selectIndex]
     clip = volumeTarget.clip
@@ -266,8 +271,8 @@ function rebuildGUI() {
 
     const displayFolder = gui.addFolder('display')
     displayFolder
-      // .add(params, 'mode', ['geometry', 'layer', 'grid layers'])
-      .add(params, 'mode', ['geometry', 'raymarching', 'layer', 'grid layers', 'volume'])
+      .add(params, 'mode', ['geometry', 'layer', 'grid layers', 'volume'])
+      // .add(params, 'mode', ['geometry', 'raymarching', 'layer', 'grid layers', 'volume'])
       .onChange(() => {
         rebuildGUI()
         render()
@@ -324,7 +329,7 @@ function rebuildGUI() {
         displayFolder.add(volconfig, 'clim1', 0, 1).onChange(render)
         displayFolder.add(volconfig, 'clim2', 0, 1).onChange(render)
         displayFolder.add(params, 'surface', 0.001, maxDistance).onChange(render)
-        displayFolder.add(volconfig, 'renderthreshold', 0, 1).onChange(render)
+        // displayFolder.add(volconfig, 'renderthreshold', 0, 1).onChange(render)
     }
 }
 
