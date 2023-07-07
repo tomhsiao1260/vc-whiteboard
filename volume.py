@@ -56,7 +56,9 @@ def read_tif(TIF_INPUT, CLIP, RAW_SAMPLING, TIF_SAMPLING):
     image_stack = np.zeros((c['w'], c['h'], c['d']), dtype=np.float32)
 
     for i, filename in enumerate(tqdm(names)):
-        image = np.array(Image.open(filename), dtype=np.float32)[c['y']:(c['y']+c['h']), c['x']:(c['x']+c['w'])]
+        image = Image.open(filename)
+        image = image.crop((c['x'], c['y'], c['x']+c['w'], c['y']+c['h']))
+        image = np.array(image, dtype=np.float32)
         image /= 65535.0
         image_stack[:, :, i] = np.transpose(image, (1, 0))
 
