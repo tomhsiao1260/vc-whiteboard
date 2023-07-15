@@ -136,7 +136,7 @@ async function loadModel(selectIndex) {
     if (mesh) {
         mesh.geometry.dispose()
         mesh.material.dispose()
-        group.remove(mesh)
+        scene.remove(mesh)
     }
 
     volumeTarget = volumeMeta.nrrd[selectIndex]
