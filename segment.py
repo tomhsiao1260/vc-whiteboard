@@ -150,6 +150,8 @@ for SEGMENT_ID in SEGMENT_LIST:
 with open(OBJ_INFO, "w") as outfile:
     json.dump(meta, outfile, indent=4)
 
+with open(f'{OBJ_OUTPUT}/.gitkeep', 'w'): pass
+
 shutil.rmtree('client/public/segment', ignore_errors=True)
 shutil.copytree(OBJ_OUTPUT, 'client/public/segment', dirs_exist_ok=True)
 
