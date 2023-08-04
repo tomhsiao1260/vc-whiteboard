@@ -13,6 +13,8 @@ export class RenderSDFLayerMaterial extends ShaderMaterial {
         voldata: { value: null },
         sdfTex: { value: null },
         cmdata: { value: null },
+        // change
+        thickness: { value: 0 },
         layer: { value: 0 },
         volumeAspect: { value: 0 },
         screenAspect: { value: 0 },
@@ -20,20 +22,25 @@ export class RenderSDFLayerMaterial extends ShaderMaterial {
       },
 
       vertexShader: /* glsl */ `
-				varying vec2 vUv;
-				void main() {
-					vUv = vec2(uv.x, 1.0 - uv.y);
-					gl_Position = projectionMatrix * modelViewMatrix * vec4( position, 1.0 );
-				}
-			`,
+        varying vec2 vUv;
+        void main() {
+          vUv = vec2(uv.x, 1.0 - uv.y);
+          gl_Position = projectionMatrix * modelViewMatrix * vec4( position, 1.0 );
+      }
+      `,
 
       fragmentShader: /* glsl */ `
         precision highp sampler3D;
-				varying vec2 vUv;
+        // change
+        precision highp sampler2DArray;
+        varying vec2 vUv;
         uniform vec2 clim;
         uniform sampler3D voldata;
-        uniform sampler3D sdfTex;
+        // uniform sampler3D sdfTex;
+        // change
+        uniform sampler2DArray sdfTex;
         uniform sampler2D cmdata;
+        uniform float thickness;
         uniform float layer;
         uniform float volumeAspect;
         uniform float screenAspect;
@@ -45,7 +52,7 @@ export class RenderSDFLayerMaterial extends ShaderMaterial {
           return texture2D(cmdata, vec2(val, 0.5));
         }
 
-				void main() {
+        void main() {
           float r = screenAspect / volumeAspect;
 
           #if DISPLAY_GRID
@@ -56,11 +63,12 @@ export class RenderSDFLayerMaterial extends ShaderMaterial {
           vec2 uv = vec2( (vUv.x - 0.5) * aspect, (vUv.y - 0.5)) + vec2(0.5);
           if ( uv.x < 0.0 || uv.x > 1.0 || uv.y < 0.0 || uv.y > 1.0 ) return;
 
-					vec2 cell = floor( uv * vec2(dimW, dimH) );
-					vec2 frac = uv * vec2(dimW, dimH) - cell;
-					float zLayer = ( cell.y * dimW + cell.x ) / ( dimH * dimW );
+          vec2 cell = floor( uv * vec2(dimW, dimH) );
+          vec2 frac = uv * vec2(dimW, dimH) - cell;
+          float zLayer = ( cell.y * dimW + cell.x ) / ( dimH * dimW );
 
-					float dist = texture( sdfTex, vec3( frac, zLayer ) ).r - surface;
+          // change
+          float dist = texture( sdfTex, vec3( frac, zLayer * thickness ) ).r - surface;
           float intensity = texture( voldata, vec3( frac, zLayer ) ).r;
 
           gl_FragColor = apply_colormap(intensity);
@@ -73,7 +81,8 @@ export class RenderSDFLayerMaterial extends ShaderMaterial {
           vec2 uv = vec2( (vUv.x - 0.5) * aspect, (vUv.y - 0.5)) + vec2(0.5);
           if ( uv.x < 0.0 || uv.x > 1.0 || uv.y < 0.0 || uv.y > 1.0 ) return;
 
-          float dist = texture( sdfTex, vec3( uv, layer ) ).r - surface;
+          // change
+          float dist = texture( sdfTex, vec3( uv, layer * thickness ) ).r - surface;
           float intensity = texture( voldata, vec3( uv, layer ) ).r;
 
           gl_FragColor = apply_colormap(intensity);
@@ -81,9 +90,9 @@ export class RenderSDFLayerMaterial extends ShaderMaterial {
           if (inverse && dist < 0.0) gl_FragColor = vec4(0, 0, 0, 0.0);
           if (!inverse && dist > 0.0) gl_FragColor = vec4(0, 0, 0, 0.0);
           #endif
-          #include <encodings_fragment>
-				}
-			`
+          #include <colorspace_fragment>
+                }
+            `
     });
 
     this.setValues(params);

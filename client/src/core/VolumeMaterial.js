@@ -15,6 +15,9 @@ export class VolumeMaterial extends ShaderMaterial {
         sdfTex: { value: null },
         voldata: { value: null },
         cmdata: { value: null },
+        // change
+        thickness: { value: 0 },
+        segmentMode: { value: false },
         size: { value: new Vector3() },
         clim: { value: new Vector2() },
         renderthreshold: { value: 0 },
@@ -33,10 +36,16 @@ export class VolumeMaterial extends ShaderMaterial {
 
       fragmentShader: /* glsl */ `
         precision highp sampler3D;
+        // change
+        precision highp sampler2DArray;
 				varying vec2 vUv;
         uniform vec2 clim;
         uniform vec3 size;
-        uniform sampler3D sdfTex;
+        // uniform sampler3D sdfTex;
+        // change
+        uniform sampler2DArray sdfTex;
+        // change
+        uniform float thickness;
         uniform sampler3D voldata;
         uniform sampler2D cmdata;
         uniform mat4 projectionInverse;
@@ -44,6 +53,7 @@ export class VolumeMaterial extends ShaderMaterial {
         uniform float renderthreshold;
         uniform float surface;
         uniform int renderstyle;
+        uniform bool segmentMode;
 
         const float relative_step_size = 1.0;
         const vec4 ambient_color = vec4(0.2, 0.4, 0.2, 1.0);
@@ -73,6 +83,9 @@ export class VolumeMaterial extends ShaderMaterial {
 
 				void main() {
           float fragCoordZ = -1.;
+
+          // float v = texture(sdfTex, vec3( vUv, 1.0 )).r;
+          // gl_FragColor = vec4(v, v, v, 1.0); return;
 
           // get the inverse of the sdf box transform
 					mat4 sdfTransform = inverse( sdfTransformInverse );
@@ -107,47 +120,61 @@ export class VolumeMaterial extends ShaderMaterial {
             // gl_FragColor = vec4(0.0, float(nsteps) / size.x, 1.0, 1.0);
             // return;
 
-            // ray march (near -> surface)
-            for ( int i = 0; i < MAX_STEPS; i ++ ) {
-              // sdf box extends from - 0.5 to 0.5
-              // transform into the local bounds space [ 0, 1 ] and check if we're inside the bounds
-              vec3 uv = ( sdfTransformInverse * nearPoint ).xyz + vec3( 0.5 );
-              if ( uv.x < 0.0 || uv.x > 1.0 || uv.y < 0.0 || uv.y > 1.0 || uv.z < 0.0 || uv.z > 1.0 ) {
-                break;
+            if (segmentMode) {
+              // ray march (near -> surface)
+              for ( int i = 0; i < MAX_STEPS; i ++ ) {
+                // sdf box extends from - 0.5 to 0.5
+                // transform into the local bounds space [ 0, 1 ] and check if we're inside the bounds
+                vec3 uv = ( sdfTransformInverse * nearPoint ).xyz + vec3( 0.5 );
+                // change
+                vec3 uvc =  vec3(uv.xy, uv.z * thickness);
+                // get the distance to surface and exit the loop if we're close to the surface
+                // change
+                float distanceToSurface = texture2D( sdfTex, uvc ).r - surface;
+                if ( distanceToSurface < SURFACE_EPSILON ) {
+                  intersectsSurface = true;
+                  break;
+                }
+                if ( uv.x < 0.0 || uv.x > 1.0 || uv.y < 0.0 || uv.y > 1.0 || uv.z < 0.0 || uv.z > 1.0 ) {
+                  break;
+                }
+                // step the ray
+                nearPoint.xyz += rayDirection * abs( distanceToSurface );
               }
-              // get the distance to surface and exit the loop if we're close to the surface
-              float distanceToSurface = texture2D( sdfTex, uv ).r - surface;
-              if ( distanceToSurface < SURFACE_EPSILON ) {
-                intersectsSurface = true;
-                break;
-              }
-              // step the ray
-              nearPoint.xyz += rayDirection * abs( distanceToSurface );
-            }
 
-            // ray march (far -> surface)
-            for ( int i = 0; i < MAX_STEPS; i ++ ) {
-              // sdf box extends from - 0.5 to 0.5
-              // transform into the local bounds space [ 0, 1 ] and check if we're inside the bounds
-              vec3 uv = ( sdfTransformInverse * farPoint ).xyz + vec3( 0.5 );
-              if ( uv.x < 0.0 || uv.x > 1.0 || uv.y < 0.0 || uv.y > 1.0 || uv.z < 0.0 || uv.z > 1.0 ) {
-                break;
+              if (intersectsSurface) {
+                // ray march (far -> surface)
+                for ( int i = 0; i < MAX_STEPS; i ++ ) {
+                  // sdf box extends from - 0.5 to 0.5
+                  // transform into the local bounds space [ 0, 1 ] and check if we're inside the bounds
+                  vec3 uv = ( sdfTransformInverse * farPoint ).xyz + vec3( 0.5 );
+                  // change
+                  vec3 uvc =  vec3(uv.xy, uv.z * thickness);
+                  // get the distance to surface and exit the loop if we're close to the surface
+                  // change
+                  float distanceToSurface = texture2D( sdfTex, uvc ).r - surface;
+                  if ( distanceToSurface < SURFACE_EPSILON ) {
+                    break;
+                  }
+                  if ( uv.x < 0.0 || uv.x > 1.0 || uv.y < 0.0 || uv.y > 1.0 || uv.z < 0.0 || uv.z > 1.0 ) {
+                    break;
+                  }
+                  // step the ray
+                  farPoint.xyz -= rayDirection * abs( distanceToSurface );
+                }
               }
-              // get the distance to surface and exit the loop if we're close to the surface
-              float distanceToSurface = texture2D( sdfTex, uv ).r - surface;
-              if ( distanceToSurface < SURFACE_EPSILON ) {
-                intersectsSurface = true;
-                break;
-              }
-              // step the ray
-              farPoint.xyz -= rayDirection * abs( distanceToSurface );
+            } else {
+              intersectsSurface = true;
             }
 
             // volume rendering
             if ( intersectsSurface ) {
               float thickness = length((sdfTransformInverse * (farPoint - nearPoint)).xyz);
-              int nsteps = int(thickness * size.x / relative_step_size + 0.5);
-              if ( nsteps < 1 ) discard;
+
+              if (segmentMode) {
+                nsteps = int(thickness * size.x / relative_step_size + 0.5);
+                if ( nsteps < 1 ) discard;
+              }
 
               vec3 step = sdfRayDirection * thickness / float(nsteps);
               vec3 uv = (sdfTransformInverse * nearPoint).xyz + vec3( 0.5 );
@@ -156,6 +183,7 @@ export class VolumeMaterial extends ShaderMaterial {
                 cast_mip(uv, step, nsteps, sdfRayDirection);
               else if (renderstyle == 1)
                 cast_iso(uv, step, nsteps, sdfRayDirection);
+              return;
             }
 
             if (gl_FragColor.a < 0.05)
