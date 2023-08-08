@@ -15,7 +15,6 @@ export default class ViewerCore {
     this.renderer = null
     this.scene = null
     this.camera = null
-    this.mode = null
 
     this.mesh = null
     this.sdfTex = null
@@ -23,6 +22,7 @@ export default class ViewerCore {
     this.volumeTarget = null
     this.clipGeometry = null
 
+    this.segmentList = {}
     this.volumeMeta = volumeMeta
     this.segmentMeta = segmentMeta
     this.render = this.render.bind(this)
@@ -34,7 +34,7 @@ export default class ViewerCore {
     this.layerPass = new FullScreenQuad(new RenderSDFLayerMaterial())
 
     this.params = {}
-    this.params.mode = 'layer'
+    this.params.mode = 'segment'
     // this.params.mode = 'volume-segment'
     this.params.surface = 0.005
     this.params.layer = 0
@@ -137,48 +137,77 @@ export default class ViewerCore {
     if (!this.volumeMeta) { console.log('volume meta.json not found'); return }
     if (!this.segmentMeta) { console.log('segment meta.json not found'); return }
 
-    const id = this.params.layers.select
-    const volumeTarget = this.volumeMeta.nrrd[id]
-    const vc = volumeTarget.clip
+    const deleteList = []
+    const createList = []
 
-    // select necessary segment to list
-    const segmentList = []
-    const geometryList = []
+    const vID = this.params.layers.select
+    const vTarget = this.volumeMeta.nrrd[vID]
+    const vc = vTarget.clip
 
+    // decide which segmentation to delete or create
     for (let i = 0; i < this.segmentMeta.obj.length; i++) {
-      const segmentTarget = this.segmentMeta.obj[i]
-      const sc = segmentTarget.clip
+      const sTarget = this.segmentMeta.obj[i]
+      const sID = sTarget.id
+      const sc = sTarget.clip
+
+      const state = {}
+      state.current = false
+      state.previous = (this.segmentList[sID]) ? true : false
 
       if (vc.x + vc.w >= sc.x && sc.x + sc.w >= vc.x) {
         if (vc.y + vc.h >= sc.y && sc.y + sc.h >= vc.y) {
           if (vc.z + vc.d >= sc.z && sc.z + sc.d >= vc.z) {
-            const loading = Loader.getSegmentData(segmentTarget.id + '.obj')
-              .then((object) => { geometryList.push(object.children[0].geometry) })
-
-            segmentList.push(loading)
+            state.current = true
           }
         }
       }
+      if (state.previous && !state.current) { deleteList.push(sTarget) }
+      if (!state.previous && state.current) { createList.push(sTarget) }
     }
-    await Promise.all(segmentList)
 
-    // turn all segment into single geometry
-    const geometry = BufferGeometryUtils.mergeGeometries(geometryList, true)
-    const material = new THREE.MeshNormalMaterial({ side: THREE.DoubleSide })
+    // delete
+    deleteList.forEach((sTarget) => {
+      const sID = sTarget.id
+      delete this.segmentList[sID]
+
+      const mesh = this.scene.getObjectByName(sID)
+      if (mesh) {
+        mesh.geometry.dispose()
+        mesh.material.dispose()
+        mesh.geometry = null
+        mesh.material = null
+        this.scene.remove(mesh)
+      }
+    })
+
+    // create
+    const loadingList = []
 
     const s = 1 / Math.max(vc.w, vc.h, vc.d)
     const center = new THREE.Vector3(- vc.x - vc.w/2, - vc.y - vc.h/2, - vc.z - vc.d/2)
+    const material = new THREE.MeshNormalMaterial({ side: THREE.DoubleSide })
 
-    this.mesh = new THREE.Mesh(geometry, material)
-    this.mesh.scale.multiplyScalar(s)
-    this.mesh.position.add(center.multiplyScalar(s))
-    this.scene.add(this.mesh)
+    createList.forEach((sTarget) => {
+      const sID = sTarget.id
+      this.segmentList[sID] = sTarget
 
+      const loading = Loader.getSegmentData(sID + '.obj')
+      loading.then((object) => {
+        const geometry = object.children[0].geometry                          
+        const mesh = new THREE.Mesh(geometry, material)
+        mesh.position.add(center.clone().multiplyScalar(s))
+        mesh.scale.multiplyScalar(s)
+        mesh.userData = sTarget
+        mesh.name = sID
+        this.scene.add(mesh)
+      })
+      loadingList.push(loading)
+    })
+    await Promise.all(loadingList)
+
+    // helper
     this.boxHelper.box.max.set(vc.w * s / 2,  vc.h * s / 2,  vc.d * s / 2)
     this.boxHelper.box.min.set(-vc.w * s / 2, -vc.h * s / 2, -vc.d * s / 2)
-
-    // clear the original geometry
-    for (let i = 0; i < geometryList.length; i ++) { geometryList[i].dispose() }
   }
 
   clipSegment() {
