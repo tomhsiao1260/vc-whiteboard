@@ -16,12 +16,11 @@ export default class ViewerCore {
     this.scene = null
     this.camera = null
 
-    this.mesh = null
     this.sdfTex = null
-    this.volumeTex = null
     this.volumeTarget = null
     this.clipGeometry = null
 
+    this.volumeList = {}
     this.segmentList = {}
     this.volumeMeta = volumeMeta
     this.segmentMeta = segmentMeta
@@ -88,24 +87,22 @@ export default class ViewerCore {
 
   clear() {
     if (this.sdfTex) { this.sdfTex.dispose(); this.sdfTex = null }
-    if (this.volumeTex) { this.volumeTex.dispose(); this.volumeTex = null }
     if (this.clipGeometry) { this.clipGeometry.dispose(); this.clipGeometry = null }
-
-    if (this.mesh) {
-      this.mesh.geometry.dispose()
-      this.mesh.material.dispose()
-      this.scene.remove(this.mesh)
-      this.mesh = null
-    } 
   }
 
   async updateVolume() {
     if (!this.volumeMeta) { console.log('volume meta.json not found'); return }
 
     const id = this.params.layers.select
-    const volumeTarget = this.volumeMeta.nrrd[id]
-    const clip = volumeTarget.clip
-    const nrrd = volumeTarget.shape
+    const vTarget = this.volumeMeta.nrrd[id]
+    const clip = vTarget.clip
+    const nrrd = vTarget.shape
+    const vID = vTarget.id
+
+    // return if current volume already exist
+    if (this.volumeList[vID]) return
+    // update list if current volume don't exist
+    if (!this.volumeList[vID]) { this.volumeList = {}; this.volumeList[vID] = vTarget }
 
     const matrix = new THREE.Matrix4()
     const center = new THREE.Vector3()
@@ -117,18 +114,18 @@ export default class ViewerCore {
     matrix.compose(center, quat, scaling)
     this.inverseBoundsMatrix.copy(matrix).invert()
 
-    await Loader.getVolumeData(volumeTarget.id + '.nrrd').then((volume) => {
-      this.volumeTex = new THREE.Data3DTexture(volume.data, volume.xLength, volume.yLength, volume.zLength)
+    await Loader.getVolumeData(vID + '.nrrd').then((volume) => {
+      const volumeTex = new THREE.Data3DTexture(volume.data, volume.xLength, volume.yLength, volume.zLength)
 
-      this.volumeTex.format = THREE.RedFormat
-      this.volumeTex.type = THREE.FloatType
-      this.volumeTex.minFilter = THREE.LinearFilter
-      this.volumeTex.magFilter = THREE.LinearFilter
-      this.volumeTex.unpackAlignment = 1
-      this.volumeTex.needsUpdate = true
+      volumeTex.format = THREE.RedFormat
+      volumeTex.type = THREE.FloatType
+      volumeTex.minFilter = THREE.LinearFilter
+      volumeTex.magFilter = THREE.LinearFilter
+      volumeTex.unpackAlignment = 1
+      volumeTex.needsUpdate = true
 
-      this.layerPass.material.uniforms.voldata.value = this.volumeTex
-      this.volumePass.material.uniforms.voldata.value = this.volumeTex
+      this.layerPass.material.uniforms.voldata.value = volumeTex
+      this.volumePass.material.uniforms.voldata.value = volumeTex
       this.volumePass.material.uniforms.size.value.set(volume.xLength, volume.yLength, volume.zLength)
     })
   }
@@ -140,8 +137,8 @@ export default class ViewerCore {
     const deleteList = []
     const createList = []
 
-    const vID = this.params.layers.select
-    const vTarget = this.volumeMeta.nrrd[vID]
+    const id = this.params.layers.select
+    const vTarget = this.volumeMeta.nrrd[id]
     const vc = vTarget.clip
 
     // decide which segmentation to delete or create
