@@ -15,9 +15,6 @@ export default class ViewerCore {
     this.renderer = null
     this.scene = null
     this.camera = null
-
-    this.sdfTex = null
-    this.volumeTarget = null
     this.clipGeometry = null
 
     this.volumeList = {}
@@ -33,7 +30,7 @@ export default class ViewerCore {
     this.layerPass = new FullScreenQuad(new RenderSDFLayerMaterial())
 
     this.params = {}
-    this.params.mode = 'segment'
+    this.params.mode = 'layer'
     // this.params.mode = 'volume-segment'
     this.params.surface = 0.005
     this.params.layer = 0
@@ -86,7 +83,6 @@ export default class ViewerCore {
   }
 
   clear() {
-    if (this.sdfTex) { this.sdfTex.dispose(); this.sdfTex = null }
     if (this.clipGeometry) { this.clipGeometry.dispose(); this.clipGeometry = null }
   }
 
@@ -125,7 +121,9 @@ export default class ViewerCore {
       volumeTex.needsUpdate = true
 
       this.layerPass.material.uniforms.voldata.value = volumeTex
+      this.layerPass.material.uniforms.cmdata.value = this.cmtextures.viridis
       this.volumePass.material.uniforms.voldata.value = volumeTex
+      this.volumePass.material.uniforms.cmdata.value = this.cmtextures.viridis
       this.volumePass.material.uniforms.size.value.set(volume.xLength, volume.yLength, volume.zLength)
     })
   }
@@ -211,49 +209,55 @@ export default class ViewerCore {
     if (!this.volumeMeta) { console.log('volume meta.json not found'); return }
 
     const id = this.params.layers.select
-    const volumeTarget = this.volumeMeta.nrrd[id]
-    const clip = volumeTarget.clip
-    const nrrd = volumeTarget.shape
+    const vTarget = this.volumeMeta.nrrd[id]
+    const clip = vTarget.clip
+    const nrrd = vTarget.shape
 
     let select = false
     const s = 1 / Math.max(nrrd.w, nrrd.h, nrrd.d)
 
-    const geometry = this.mesh.geometry
-    const positions = geometry.getAttribute('position').array
-    const normals = geometry.getAttribute('normal').array
-    const uvs = geometry.getAttribute('uv').array
-
     const c_positions = []
     const c_normals = []
     const c_uvs = []
+    const chunkList = []
 
     const boundingBox = new THREE.Box3(
       new THREE.Vector3(clip.x, clip.y, clip.z),
       new THREE.Vector3(clip.x + clip.w, clip.y + clip.h, clip.z + clip.d)
     )
 
-    for (let i = 0; i < positions.length; i += 3) {
-      const x = positions[i + 0]
-      const y = positions[i + 1]
-      const z = positions[i + 2]
+    this.scene.children.forEach((mesh) => {
+      if (mesh.userData.id) {
+        const positions = mesh.geometry.getAttribute('position').array
+        const normals = mesh.geometry.getAttribute('normal').array
+        const uvs = mesh.geometry.getAttribute('uv').array
 
-      if (i % 9 == 0) { select = boundingBox.containsPoint(new THREE.Vector3(x, y, z)) }
+        for (let i = 0; i < positions.length; i += 3) {
+          const x = positions[i + 0]
+          const y = positions[i + 1]
+          const z = positions[i + 2]
 
-      if (select) {
-        const newX = nrrd.w * s * ((x - clip.x) / clip.w - 0.5)
-        const newY = nrrd.h * s * ((y - clip.y) / clip.h - 0.5)
-        const newZ = nrrd.d * s * ((z - clip.z) / clip.d - 0.5)
+          if (i % 9 == 0) { select = boundingBox.containsPoint(new THREE.Vector3(x, y, z)) }
 
-        c_positions.push(newX, newY, newZ)
-        c_uvs.push(uvs[2 * i + 0], uvs[2 * i + 1])
-        c_normals.push(normals[3 * i + 0], normals[3 * i + 1], normals[3 * i + 2])
+          if (select) {
+            const newX = nrrd.w * s * ((x - clip.x) / clip.w - 0.5)
+            const newY = nrrd.h * s * ((y - clip.y) / clip.h - 0.5)
+            const newZ = nrrd.d * s * ((z - clip.z) / clip.d - 0.5)
+
+            c_positions.push(newX, newY, newZ)
+            c_uvs.push(uvs[2 * i + 0], uvs[2 * i + 1])
+            c_normals.push(normals[3 * i + 0], normals[3 * i + 1], normals[3 * i + 2])
+          }
+        }
+        chunkList.push({ id: mesh.userData.id, maxIndex: c_positions.length / 3 })
       }
-    }
+    })
 
     this.clipGeometry = new THREE.BufferGeometry()
     this.clipGeometry.setAttribute('position', new THREE.BufferAttribute(new Float32Array(c_positions), 3))
     this.clipGeometry.setAttribute('uv', new THREE.BufferAttribute(new Float32Array(c_uvs), 2))
     this.clipGeometry.setAttribute('normal', new THREE.BufferAttribute(new Float32Array(c_normals), 3))
+    this.clipGeometry.userData = chunkList
   }
 
   updateSegmentSDF() {
@@ -268,14 +272,14 @@ export default class ViewerCore {
     const s = 1 / Math.max(nrrd.w, nrrd.h, nrrd.d)
 
     // create a new 3d render target texture
-    // this.sdfTex = new THREE.WebGL3DRenderTarget(nrrd.w * r, nrrd.h * r, nrrd.d * r)
+    // const sdfTex = new THREE.WebGL3DRenderTarget(nrrd.w * r, nrrd.h * r, nrrd.d * r)
     // change
-    this.sdfTex = new THREE.WebGLArrayRenderTarget(nrrd.w * r, nrrd.h * r, nrrd.d * r)
-    this.sdfTex.texture.format = THREE.RedFormat
-    // this.sdfTex.texture.format = THREE.RGFormat
-    this.sdfTex.texture.type = THREE.FloatType
-    this.sdfTex.texture.minFilter = THREE.LinearFilter
-    this.sdfTex.texture.magFilter = THREE.LinearFilter
+    const sdfTex = new THREE.WebGLArrayRenderTarget(nrrd.w * r, nrrd.h * r, nrrd.d * r)
+    sdfTex.texture.format = THREE.RedFormat
+    // sdfTex.texture.format = THREE.RGFormat
+    sdfTex.texture.type = THREE.FloatType
+    sdfTex.texture.minFilter = THREE.LinearFilter
+    sdfTex.texture.magFilter = THREE.LinearFilter
 
     // prep the sdf generation material pass
     const matrix = new THREE.Matrix4()
@@ -298,11 +302,14 @@ export default class ViewerCore {
     for (let i = 0; i < nrrd.d * r; i++) {
       // don't need to change beacuase of bvh calculation within 0~1
       generateSdfPass.material.uniforms.zValue.value = i * pxWidth + halfWidth
-      this.renderer.setRenderTarget(this.sdfTex, i)
+      this.renderer.setRenderTarget(sdfTex, i)
       generateSdfPass.render(this.renderer)
     }
     this.renderer.setRenderTarget(null)
     generateSdfPass.material.dispose()
+
+    this.volumePass.material.uniforms.sdfTex.value = sdfTex.texture
+    this.layerPass.material.uniforms.sdfTex.value = sdfTex.texture
   }
 
   render() {
@@ -318,11 +325,6 @@ export default class ViewerCore {
 
       const id = this.params.layers.select
       const shape = this.volumeMeta.nrrd[id].shape
-
-      const sdft = this.sdfTex
-      const cmt = this.cmtextures.viridis
-      if (cmt) this.volumePass.material.uniforms.cmdata.value = cmt
-      if (sdft) this.volumePass.material.uniforms.sdfTex.value = sdft.texture
 
       this.volumePass.material.uniforms.clim.value.set(0.5, 0.9)
       this.volumePass.material.uniforms.renderstyle.value = 0 // 0: MIP, 1: ISO
@@ -340,11 +342,6 @@ export default class ViewerCore {
       const id = this.params.layers.select
       const clip = this.volumeMeta.nrrd[id].clip
       const shape = this.volumeMeta.nrrd[id].shape
-
-      const sdft = this.sdfTex
-      const cmt = this.cmtextures.viridis
-      if (cmt) this.layerPass.material.uniforms.cmdata.value = cmt
-      if (sdft) this.layerPass.material.uniforms.sdfTex.value = sdft.texture
 
       const gridMode = this.params.mode === 'layer' ? 0 : 1
       if (gridMode !== this.layerPass.material.defines.DISPLAY_GRID) {

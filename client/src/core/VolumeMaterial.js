@@ -130,7 +130,7 @@ export class VolumeMaterial extends ShaderMaterial {
                 vec3 uvc =  vec3(uv.xy, uv.z * thickness);
                 // get the distance to surface and exit the loop if we're close to the surface
                 // change
-                float distanceToSurface = texture2D( sdfTex, uvc ).r - surface;
+                float distanceToSurface = texture( sdfTex, uvc ).r - surface;
                 if ( distanceToSurface < SURFACE_EPSILON ) {
                   intersectsSurface = true;
                   break;
@@ -152,7 +152,7 @@ export class VolumeMaterial extends ShaderMaterial {
                   vec3 uvc =  vec3(uv.xy, uv.z * thickness);
                   // get the distance to surface and exit the loop if we're close to the surface
                   // change
-                  float distanceToSurface = texture2D( sdfTex, uvc ).r - surface;
+                  float distanceToSurface = texture( sdfTex, uvc ).r - surface;
                   if ( distanceToSurface < SURFACE_EPSILON ) {
                     break;
                   }
