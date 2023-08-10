@@ -47,6 +47,7 @@ function updateGUI(viewer) {
     const id = viewer.params.layers.select
     const clip = viewer.volumeMeta.nrrd[id].clip
 
+    viewer.params.layer = clip.z
     gui.add(viewer.params, 'inverse').onChange(viewer.render)
     gui.add(viewer.params, 'surface', 0.001, 0.5).onChange(viewer.render)
     gui.add(viewer.params, 'layer', clip.z, clip.z + clip.d, 1).onChange(viewer.render)

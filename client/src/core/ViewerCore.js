@@ -16,6 +16,7 @@ export default class ViewerCore {
     this.scene = null
     this.camera = null
     this.clipGeometry = null
+    this.bvh = null
 
     this.volumeList = {}
     this.segmentList = {}
@@ -83,7 +84,6 @@ export default class ViewerCore {
   }
 
   clear() {
-    if (this.clipGeometry) { this.clipGeometry.dispose(); this.clipGeometry = null }
   }
 
   async updateVolume() {
@@ -218,6 +218,13 @@ export default class ViewerCore {
     const clip = vTarget.clip
     const nrrd = vTarget.shape
 
+    // return if current clip geometry already exist
+    if (this.clipGeometry) {
+      if (this.clipGeometry.userData.vID === id) return
+      this.clipGeometry.dispose()
+      this.clipGeometry = null
+    }
+
     let select = false
     const s = 1 / Math.max(nrrd.w, nrrd.h, nrrd.d)
 
@@ -262,16 +269,25 @@ export default class ViewerCore {
     this.clipGeometry.setAttribute('position', new THREE.BufferAttribute(new Float32Array(c_positions), 3))
     this.clipGeometry.setAttribute('uv', new THREE.BufferAttribute(new Float32Array(c_uvs), 2))
     this.clipGeometry.setAttribute('normal', new THREE.BufferAttribute(new Float32Array(c_normals), 3))
-    this.clipGeometry.userData = chunkList
+    this.clipGeometry.userData.chunkList = chunkList
+    this.clipGeometry.userData.vID = id
   }
 
   updateSegmentSDF() {
     if (!this.volumeMeta) { console.log('volume meta.json not found'); return }
 
     const id = this.params.layers.select
-    const volumeTarget = this.volumeMeta.nrrd[id]
-    const clip = volumeTarget.clip
-    const nrrd = volumeTarget.shape
+    const vTarget = this.volumeMeta.nrrd[id]
+    const clip = vTarget.clip
+    const nrrd = vTarget.shape
+
+    // return if current bvh already exist
+    if (this.bvh) {
+      if (this.bvh.geometry.userData.vID === id) return
+      this.bvh.geometry.dispose()
+      this.bvh.geometry = null
+      this.bvh = null
+    }
 
     const r = 1.0
     const s = 1 / Math.max(nrrd.w, nrrd.h, nrrd.d)
@@ -295,9 +311,9 @@ export default class ViewerCore {
     scaling.set(nrrd.w * s, nrrd.h * s, nrrd.d * s)
     matrix.compose(center, quat, scaling)
 
-    const bvh = new MeshBVH(this.clipGeometry, { maxLeafTris: 1 })
+    this.bvh = new MeshBVH(this.clipGeometry, { maxLeafTris: 1 })
     const generateSdfPass = new FullScreenQuad(new GenerateSDFMaterial())
-    generateSdfPass.material.uniforms.bvh.value.updateFrom(bvh)
+    generateSdfPass.material.uniforms.bvh.value.updateFrom(this.bvh)
     generateSdfPass.material.uniforms.matrix.value.copy(matrix)
 
     // render into each layer
