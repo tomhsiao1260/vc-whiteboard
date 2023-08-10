@@ -37,7 +37,7 @@ function updateGUI(viewer) {
 
   if (gui) { gui.destroy() }
   gui = new GUI()
-  gui.add(viewer.params, 'mode', ['segment', 'volume', 'volume-segment', 'layer', 'grid layer']).onChange(() => update(viewer))
+  gui.add(viewer.params, 'mode', ['segment', 'layer', 'grid layer', 'volume', 'volume-segment']).onChange(() => update(viewer))
   gui.add(viewer.params.layers, 'select', viewer.params.layers.options).name('layers').onChange(() => update(viewer))
 
   if (mode === 'segment') { return }
@@ -104,19 +104,21 @@ function labeling(viewer) {
     mouse.y = - (e.clientY / window.innerHeight) * 2 + 1
 
     const { mode } = viewer.params
+    labelDiv.style.display = 'none'
+
     if (mode === 'segment' || mode === 'layer') {
       // only this line is important
       const sTarget = viewer.getLabel(mouse)
-      if (!sTarget) { labelDiv.style.display = 'none'; return }
+      if (!sTarget) { return }
 
       const { id, clip } = sTarget
       labelDiv.style.display = 'inline'
       labelDiv.style.left = (e.clientX + 20) + 'px'
       labelDiv.style.top = (e.clientY + 20) + 'px'
       labelDiv.innerHTML = `${id}<br>layer: ${clip.z}~${clip.z+clip.d}`
+      // as well as this line
+      updateViewer(viewer)
     }
-    // as well as this line
-    updateViewer(viewer)
   })
 }
 

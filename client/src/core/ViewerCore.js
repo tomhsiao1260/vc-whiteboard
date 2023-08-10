@@ -16,6 +16,7 @@ export default class ViewerCore {
     this.scene = null
     this.camera = null
     this.clipGeometry = null
+    this.focusGeometry = null
     this.bvh = null
 
     this.volumeList = {}
@@ -177,7 +178,8 @@ export default class ViewerCore {
 
     // create
     const loadingList = []
-    const material = new THREE.MeshNormalMaterial({ side: THREE.DoubleSide })
+    const normalMaterial = new THREE.MeshNormalMaterial({ side: THREE.DoubleSide })
+    const basicMaterial = new THREE.MeshBasicMaterial({ side: THREE.DoubleSide, color: 'red' })
 
     createList.forEach((sTarget) => {
       const sID = sTarget.id
@@ -186,7 +188,7 @@ export default class ViewerCore {
       const loading = Loader.getSegmentData(sID + '.obj')
       loading.then((object) => {
         const geometry = object.children[0].geometry                          
-        const mesh = new THREE.Mesh(geometry, material)
+        const mesh = new THREE.Mesh(geometry, normalMaterial)
         mesh.userData = sTarget
         mesh.name = sID
         this.scene.add(mesh)
@@ -195,13 +197,19 @@ export default class ViewerCore {
     })
     await Promise.all(loadingList)
 
-    // position & scale
+    // position, scale & labeling
     const s = 1 / Math.max(vc.w, vc.h, vc.d)
     const center = new THREE.Vector3(- vc.x - vc.w/2, - vc.y - vc.h/2, - vc.z - vc.d/2)
     this.scene.children.forEach((mesh) => {
-      if (mesh.userData.id) {
+      const sID = mesh.userData.id
+      if (sID) {
         mesh.scale.set(s, s, s)
         mesh.position.copy(center.clone().multiplyScalar(s))
+
+        const isFocus = this.segmentList[sID].focus
+        const isNormal = mesh.material.type === 'MeshNormalMaterial'
+        if (isFocus && isNormal) { mesh.material = basicMaterial }
+        if (!isFocus && !isNormal) { mesh.material = normalMaterial }
       }
     })
 
@@ -213,6 +221,11 @@ export default class ViewerCore {
   clipSegment() {
     if (!this.volumeMeta) { console.log('volume meta.json not found'); return }
 
+    this.updateClipGeometry()
+    this.updateFocusGeometry()
+  }
+
+  updateClipGeometry() {
     const id = this.params.layers.select
     const vTarget = this.volumeMeta.nrrd[id]
     const clip = vTarget.clip
@@ -220,7 +233,7 @@ export default class ViewerCore {
 
     // return if current clip geometry already exist
     if (this.clipGeometry) {
-      if (this.clipGeometry.userData.vID === id) return
+      if (this.clipGeometry.userData.id === id) return
       this.clipGeometry.dispose()
       this.clipGeometry = null
     }
@@ -270,24 +283,78 @@ export default class ViewerCore {
     this.clipGeometry.setAttribute('uv', new THREE.BufferAttribute(new Float32Array(c_uvs), 2))
     this.clipGeometry.setAttribute('normal', new THREE.BufferAttribute(new Float32Array(c_normals), 3))
     this.clipGeometry.userData.chunkList = chunkList
-    this.clipGeometry.userData.vID = id
+    this.clipGeometry.userData.id = id
+  }
+
+  updateFocusGeometry() {
+    const q = { start: 0, end: 0, id: null }
+    const { chunkList } = this.clipGeometry.userData
+    for (let i = 0; i < chunkList.length; i += 1) {
+      const { id: sID } = chunkList[i]
+      if (this.segmentList[sID].focus) {
+        q.id = sID
+        q.end = chunkList[i].maxIndex
+        q.start = (i === 0) ? 0 : chunkList[i - 1].maxIndex
+        break
+      }
+    }
+    // return if current focus geometry already exist
+    if (this.focusGeometry && this.focusGeometry.userData.id === q.id) return
+
+    const f_positions = this.clipGeometry.getAttribute('position').array.slice(q.start * 3, q.end * 3)
+    const f_normals = this.clipGeometry.getAttribute('normal').array.slice(q.start * 3, q.end * 3)
+    const f_uvs = this.clipGeometry.getAttribute('uv').array.slice(q.start * 2, q.end * 2)
+
+    this.focusGeometry = new THREE.BufferGeometry()
+    this.focusGeometry.setAttribute('position', new THREE.BufferAttribute(new Float32Array(f_positions), 3))
+    this.focusGeometry.setAttribute('uv', new THREE.BufferAttribute(new Float32Array(f_uvs), 2))
+    this.focusGeometry.setAttribute('normal', new THREE.BufferAttribute(new Float32Array(f_normals), 3))
+    this.focusGeometry.userData = q
   }
 
   updateSegmentSDF() {
     if (!this.volumeMeta) { console.log('volume meta.json not found'); return }
 
-    const id = this.params.layers.select
-    const vTarget = this.volumeMeta.nrrd[id]
-    const clip = vTarget.clip
-    const nrrd = vTarget.shape
+    this.updateClipSDF()
+    this.updateFocusSDF()
+  }
 
+  updateClipSDF() {
     // return if current bvh already exist
+    const id = this.params.layers.select
+
     if (this.bvh) {
-      if (this.bvh.geometry.userData.vID === id) return
+      if (this.bvh.geometry.userData.id === id) return
       this.bvh.geometry.dispose()
       this.bvh.geometry = null
       this.bvh = null
     }
+
+    const [ sdfTex, bvh ] = this.sdfTexGenerate(this.clipGeometry)
+    this.bvh = bvh
+    this.volumePass.material.uniforms.sdfTex.value = sdfTex.texture
+    this.layerPass.material.uniforms.sdfTex.value = sdfTex.texture
+  }
+
+  updateFocusSDF() {
+    // return if current focus geometry is empty
+    if (!this.focusGeometry) return
+    if (!this.focusGeometry.getAttribute('position').count) return
+    // return if texture is alreay loaded
+    const preTex = this.layerPass.material.uniforms.sdfTexFocus.value
+    if (preTex && preTex.name === this.focusGeometry.userData.id) return
+
+    const [ sdfTexFocus, _ ] = this.sdfTexGenerate(this.focusGeometry)
+    sdfTexFocus.texture.name = this.focusGeometry.userData.id
+    this.volumePass.material.uniforms.sdfTexFocus.value = sdfTexFocus.texture
+    this.layerPass.material.uniforms.sdfTexFocus.value = sdfTexFocus.texture
+  }
+
+  sdfTexGenerate(geometry) {
+    const id = this.params.layers.select
+    const vTarget = this.volumeMeta.nrrd[id]
+    const clip = vTarget.clip
+    const nrrd = vTarget.shape
 
     const r = 1.0
     const s = 1 / Math.max(nrrd.w, nrrd.h, nrrd.d)
@@ -311,9 +378,9 @@ export default class ViewerCore {
     scaling.set(nrrd.w * s, nrrd.h * s, nrrd.d * s)
     matrix.compose(center, quat, scaling)
 
-    this.bvh = new MeshBVH(this.clipGeometry, { maxLeafTris: 1 })
+    const bvh = new MeshBVH(geometry, { maxLeafTris: 1 })
     const generateSdfPass = new FullScreenQuad(new GenerateSDFMaterial())
-    generateSdfPass.material.uniforms.bvh.value.updateFrom(this.bvh)
+    generateSdfPass.material.uniforms.bvh.value.updateFrom(bvh)
     generateSdfPass.material.uniforms.matrix.value.copy(matrix)
 
     // render into each layer
@@ -329,8 +396,7 @@ export default class ViewerCore {
     this.renderer.setRenderTarget(null)
     generateSdfPass.material.dispose()
 
-    this.volumePass.material.uniforms.sdfTex.value = sdfTex.texture
-    this.layerPass.material.uniforms.sdfTex.value = sdfTex.texture
+    return [ sdfTex, bvh ]
   }
 
   getLabel(mouse) {

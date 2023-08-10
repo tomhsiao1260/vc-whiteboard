@@ -13,6 +13,7 @@ export class VolumeMaterial extends ShaderMaterial {
       uniforms: {
         surface: { value: 0 },
         sdfTex: { value: null },
+        sdfTexFocus: { value: null },
         voldata: { value: null },
         cmdata: { value: null },
         // change
@@ -44,6 +45,7 @@ export class VolumeMaterial extends ShaderMaterial {
         // uniform sampler3D sdfTex;
         // change
         uniform sampler2DArray sdfTex;
+        uniform sampler2DArray sdfTexFocus;
         // change
         uniform float thickness;
         uniform sampler3D voldata;

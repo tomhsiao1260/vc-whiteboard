@@ -12,6 +12,7 @@ export class RenderSDFLayerMaterial extends ShaderMaterial {
         surface: { value: 0 },
         voldata: { value: null },
         sdfTex: { value: null },
+        sdfTexFocus: { value: null },
         cmdata: { value: null },
         // change
         thickness: { value: 0 },
@@ -39,6 +40,7 @@ export class RenderSDFLayerMaterial extends ShaderMaterial {
         // uniform sampler3D sdfTex;
         // change
         uniform sampler2DArray sdfTex;
+        uniform sampler2DArray sdfTexFocus;
         uniform sampler2D cmdata;
         uniform float thickness;
         uniform float layer;
@@ -89,6 +91,10 @@ export class RenderSDFLayerMaterial extends ShaderMaterial {
 
           if (inverse && dist < 0.0) gl_FragColor = vec4(0, 0, 0, 0.0);
           if (!inverse && dist > 0.0) gl_FragColor = vec4(0, 0, 0, 0.0);
+
+          float f_dist = texture( sdfTexFocus, vec3( uv, layer * thickness ) ).r - surface;
+          if (f_dist > -surface && f_dist < 0.0 && dist < 0.0) gl_FragColor = vec4(1.0, 0.0, 0.0, 1.0);
+
           #endif
           #include <colorspace_fragment>
                 }
