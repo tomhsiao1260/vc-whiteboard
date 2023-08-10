@@ -177,9 +177,6 @@ export default class ViewerCore {
 
     // create
     const loadingList = []
-
-    const s = 1 / Math.max(vc.w, vc.h, vc.d)
-    const center = new THREE.Vector3(- vc.x - vc.w/2, - vc.y - vc.h/2, - vc.z - vc.d/2)
     const material = new THREE.MeshNormalMaterial({ side: THREE.DoubleSide })
 
     createList.forEach((sTarget) => {
@@ -190,8 +187,6 @@ export default class ViewerCore {
       loading.then((object) => {
         const geometry = object.children[0].geometry                          
         const mesh = new THREE.Mesh(geometry, material)
-        mesh.position.add(center.clone().multiplyScalar(s))
-        mesh.scale.multiplyScalar(s)
         mesh.userData = sTarget
         mesh.name = sID
         this.scene.add(mesh)
@@ -199,6 +194,16 @@ export default class ViewerCore {
       loadingList.push(loading)
     })
     await Promise.all(loadingList)
+
+    // position & scale
+    const s = 1 / Math.max(vc.w, vc.h, vc.d)
+    const center = new THREE.Vector3(- vc.x - vc.w/2, - vc.y - vc.h/2, - vc.z - vc.d/2)
+    this.scene.children.forEach((mesh) => {
+      if (mesh.userData.id) {
+        mesh.scale.set(s, s, s)
+        mesh.position.copy(center.clone().multiplyScalar(s))
+      }
+    })
 
     // helper
     this.boxHelper.box.max.set(vc.w * s / 2,  vc.h * s / 2,  vc.d * s / 2)
