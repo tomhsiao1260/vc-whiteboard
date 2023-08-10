@@ -1,3 +1,4 @@
+import * as THREE from 'three'
 import Loader from './Loader'
 import ViewerCore from './core/ViewerCore'
 import { GUI } from 'three/examples/jsm/libs/lil-gui.module.min'
@@ -11,6 +12,7 @@ async function init() {
   const viewer = new ViewerCore({ volumeMeta, segmentMeta })
 
   update(viewer)
+  labeling(viewer)
 }
 
 function update(viewer) {
@@ -87,5 +89,34 @@ function modeC(viewer) {
     .then(() => viewer.updateSegmentSDF())
     .then(() => viewer.render())
     .then(() => { console.log(`volume-segment ${viewer.params.layers.select} is loaded`) })
+}
+
+// segment labeling
+function labeling(viewer) {
+  const mouse = new THREE.Vector2()
+  const labelDiv = document.createElement('div')
+  labelDiv.id = 'label'
+  document.body.appendChild(labelDiv)
+
+  window.addEventListener('mousedown', (e) => {
+    if (!(e.target instanceof HTMLCanvasElement)) return
+    mouse.x = e.clientX / window.innerWidth * 2 - 1
+    mouse.y = - (e.clientY / window.innerHeight) * 2 + 1
+
+    const { mode } = viewer.params
+    if (mode === 'segment' || mode === 'layer') {
+      // only this line is important
+      const sTarget = viewer.getLabel(mouse)
+      if (!sTarget) { labelDiv.style.display = 'none'; return }
+
+      const { id, clip } = sTarget
+      labelDiv.style.display = 'inline'
+      labelDiv.style.left = (e.clientX + 20) + 'px'
+      labelDiv.style.top = (e.clientY + 20) + 'px'
+      labelDiv.innerHTML = `${id}<br>layer: ${clip.z}~${clip.z+clip.d}`
+    }
+    // as well as this line
+    updateViewer(viewer)
+  })
 }
 

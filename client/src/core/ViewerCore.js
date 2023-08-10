@@ -333,6 +333,57 @@ export default class ViewerCore {
     this.layerPass.material.uniforms.sdfTex.value = sdfTex.texture
   }
 
+  getLabel(mouse) {
+    for (const sID in this.segmentList) { this.segmentList[sID].focus = false }
+
+    // labeling in segment mode
+    if (this.params.mode === 'segment') {
+      const raycaster = new THREE.Raycaster()
+      raycaster.setFromCamera(mouse, this.camera)
+      const intersects = raycaster.intersectObjects(this.scene.children)
+
+      for (let i = 0; i < intersects.length; i++) {
+        const mesh = intersects[i].object
+        const sID = mesh.userData.id
+        if (sID) {
+          this.segmentList[sID].focus = true
+          return this.segmentList[sID]
+        }
+      }
+    }
+
+    // labeling in layer mode
+    if (this.params.mode === 'layer') {
+      const id = this.params.layers.select
+      const vTarget = this.volumeMeta.nrrd[id]
+      const clip = vTarget.clip
+      const nrrd = vTarget.shape
+
+      const s = 1 / Math.max(nrrd.w, nrrd.h, nrrd.d)
+      const l = (this.params.layer - clip.z) / clip.d - 0.5
+      const aspect = window.innerWidth / window.innerHeight
+
+      const point = new THREE.Vector3()
+      point.z = nrrd.d * s * l
+      point.x = nrrd.w * s * mouse.x / 2 * aspect
+      point.y = nrrd.h * s * mouse.y / 2 * (-1)
+
+      const target = this.bvh.closestPointToPoint(point, {}, 0, 0.02)
+      if (!target) return
+
+      const { chunkList } = this.bvh.geometry.userData
+      const hitIndex = this.bvh.geometry.index.array[target.faceIndex * 3]
+
+      for (let i = 0; i < chunkList.length; i ++) {
+        const { id: sID, maxIndex } = chunkList[i]
+        if (maxIndex > hitIndex) {
+          this.segmentList[sID].focus = true
+          return this.segmentList[sID]
+        }
+      }
+    }
+  }
+
   render() {
     if (!this.renderer) return
 
