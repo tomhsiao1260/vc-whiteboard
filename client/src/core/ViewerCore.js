@@ -287,20 +287,23 @@ export default class ViewerCore {
   }
 
   updateFocusGeometry() {
-    const q = { start: 0, end: 0, id: null }
+    const q = { start: 0, end: 0, sID: null, vID: null }
     const { chunkList } = this.clipGeometry.userData
     for (let i = 0; i < chunkList.length; i += 1) {
       const { id: sID } = chunkList[i]
       if (this.segmentList[sID].focus) {
-        q.id = sID
+        q.sID = sID
+        q.vID = this.params.layers.select
         q.end = chunkList[i].maxIndex
         q.start = (i === 0) ? 0 : chunkList[i - 1].maxIndex
         break
       }
     }
+    if (!q.end && !this.focusGeometry) return
+    if (!q.end) { this.focusGeometry.dispose(); this.focusGeometry = null; return }
     // return if current focus geometry already exist
-    if (this.focusGeometry && this.focusGeometry.userData.id === q.id) return
-    if (!q.end) return
+    const f = this.focusGeometry
+    if (f && f.userData.sID === q.sID && f.userData.vID === q.vID) return
 
     const f_positions = this.clipGeometry.getAttribute('position').array.slice(q.start * 3, q.end * 3)
     const f_normals = this.clipGeometry.getAttribute('normal').array.slice(q.start * 3, q.end * 3)
@@ -338,15 +341,13 @@ export default class ViewerCore {
   }
 
   updateFocusSDF() {
-    // return if current focus geometry is empty
-    if (!this.focusGeometry) return
-    if (!this.focusGeometry.getAttribute('position').count) return
     // return if texture is alreay loaded
-    const preTex = this.layerPass.material.uniforms.sdfTexFocus.value
-    if (preTex && preTex.name === this.focusGeometry.userData.id) return
+    const f = this.focusGeometry
+    const ft = this.layerPass.material.uniforms.sdfTexFocus.value
+    if (f && ft && ft.name === `v${f.userData.vID}s${f.userData.sID}`) return
 
     const [ sdfTexFocus, _ ] = this.sdfTexGenerate(this.focusGeometry)
-    sdfTexFocus.texture.name = this.focusGeometry.userData.id
+    sdfTexFocus.texture.name = f ? `v${f.userData.vID}s${f.userData.sID}` : ''
     this.volumePass.material.uniforms.sdfTexFocus.value = sdfTexFocus.texture
     this.layerPass.material.uniforms.sdfTexFocus.value = sdfTexFocus.texture
   }
@@ -379,6 +380,10 @@ export default class ViewerCore {
     scaling.set(nrrd.w * s, nrrd.h * s, nrrd.d * s)
     matrix.compose(center, quat, scaling)
 
+    // return if current focus geometry is empty
+    if (!geometry) return [ sdfTex, null ]
+    if (!geometry.getAttribute('position').count) return [ sdfTex, null ]
+
     const bvh = new MeshBVH(geometry, { maxLeafTris: 1 })
     const generateSdfPass = new FullScreenQuad(new GenerateSDFMaterial())
     generateSdfPass.material.uniforms.bvh.value.updateFrom(bvh)
@@ -401,8 +406,6 @@ export default class ViewerCore {
   }
 
   getLabel(mouse) {
-    for (const sID in this.segmentList) { this.segmentList[sID].focus = false }
-
     // labeling in segment mode
     if (this.params.mode === 'segment') {
       const raycaster = new THREE.Raycaster()
@@ -413,6 +416,7 @@ export default class ViewerCore {
         const mesh = intersects[i].object
         const sID = mesh.userData.id
         if (sID) {
+          for (const sID in this.segmentList) { this.segmentList[sID].focus = false }
           this.segmentList[sID].focus = true
           return this.segmentList[sID]
         }
@@ -435,6 +439,7 @@ export default class ViewerCore {
       point.x = nrrd.w * s * mouse.x / 2 * aspect
       point.y = nrrd.h * s * mouse.y / 2 * (-1)
 
+      if (!this.bvh) return
       const target = this.bvh.closestPointToPoint(point, {}, 0, 0.02)
       if (!target) return
 
@@ -444,6 +449,7 @@ export default class ViewerCore {
       for (let i = 0; i < chunkList.length; i ++) {
         const { id: sID, maxIndex } = chunkList[i]
         if (maxIndex > hitIndex) {
+          for (const sID in this.segmentList) { this.segmentList[sID].focus = false }
           this.segmentList[sID].focus = true
           return this.segmentList[sID]
         }

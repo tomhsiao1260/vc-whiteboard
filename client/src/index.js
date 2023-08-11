@@ -127,6 +127,9 @@ function labeling(viewer) {
     const { mode } = viewer.params
     labelDiv.style.display = 'none'
 
+    const loadingDiv = document.querySelector('#loading')
+    if (loadingDiv.style.display === 'inline') return
+
     if (mode === 'segment' || mode === 'layer') {
       // only this line is important
       const sTarget = viewer.getLabel(mouse)
