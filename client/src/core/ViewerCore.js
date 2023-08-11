@@ -300,6 +300,7 @@ export default class ViewerCore {
     }
     // return if current focus geometry already exist
     if (this.focusGeometry && this.focusGeometry.userData.id === q.id) return
+    if (!q.end) return
 
     const f_positions = this.clipGeometry.getAttribute('position').array.slice(q.start * 3, q.end * 3)
     const f_normals = this.clipGeometry.getAttribute('normal').array.slice(q.start * 3, q.end * 3)

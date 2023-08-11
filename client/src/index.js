@@ -11,6 +11,7 @@ async function init() {
 
   const viewer = new ViewerCore({ volumeMeta, segmentMeta })
 
+  loading()
   update(viewer)
   labeling(viewer)
 }
@@ -65,8 +66,12 @@ function modeA(viewer) {
   viewer.clear()
   const segment = viewer.updateSegment()
 
+  const loadingDiv = document.querySelector('#loading')
+  loadingDiv.style.display = 'inline'
+
   segment.then(() => viewer.render())
     .then(() => { console.log(`segment ${viewer.params.layers.select} is loaded`) })
+    .then(() => { loadingDiv.style.display = 'none' })
 }
 
 // volume mode
@@ -74,8 +79,12 @@ function modeB(viewer) {
   viewer.clear()
   const volume = viewer.updateVolume()
 
+  const loadingDiv = document.querySelector('#loading')
+  loadingDiv.style.display = 'inline'
+
   volume.then(() => viewer.render())
     .then(() => { console.log(`volume ${viewer.params.layers.select} is loaded`) })
+    .then(() => { loadingDiv.style.display = 'none' })
 }
 
 // volume-segment mode
@@ -84,11 +93,23 @@ function modeC(viewer) {
   const volume = viewer.updateVolume()
   const segment = viewer.updateSegment()
 
+  const loadingDiv = document.querySelector('#loading')
+  loadingDiv.style.display = 'inline'
+
   Promise.all([volume, segment])
     .then(() => viewer.clipSegment())
     .then(() => viewer.updateSegmentSDF())
     .then(() => viewer.render())
     .then(() => { console.log(`volume-segment ${viewer.params.layers.select} is loaded`) })
+    .then(() => { loadingDiv.style.display = 'none' })
+}
+
+// loading div element
+function loading() {
+  const loadingDiv = document.createElement('div')
+  loadingDiv.id = 'loading'
+  loadingDiv.innerHTML = 'Loading ...'
+  document.body.appendChild(loadingDiv)
 }
 
 // segment labeling

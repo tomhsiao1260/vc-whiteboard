@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <title>three-mesh-bvh - Fast SDF Generation</title>
+    <title>volume viewer</title>
     <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
 
     <style type="text/css">
@@ -30,14 +30,26 @@
         #label {
           position: absolute;
           transform: translate(0%, 0%);
-          width: 200px;
-          height: 50px;
           font-size: 12px;
           line-height: 1.5;
           color: white;
           pointer-events: none;
           display: none;
-          background-color: transparent;
+          background-color: rgba(0, 0, 0, 0.3);
+          padding: 3px 8px;
+          border-radius: 5px;
+        }
+
+        #loading {
+          position: fixed;
+          top: 50%;
+          left: 50%;
+          transform: translate(-50%, -50%);
+          background-color: rgba(0, 0, 0, 0.3);
+          color: white;
+          font-size: 24px;
+          padding: 10px 20px;
+          border-radius: 5px;
         }
     </style>
 </head>
