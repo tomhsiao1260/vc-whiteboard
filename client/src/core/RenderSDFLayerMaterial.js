@@ -76,8 +76,9 @@ export class RenderSDFLayerMaterial extends ShaderMaterial {
           gl_FragColor = apply_colormap(intensity);
           if (frac.x < 0.01 || frac.y < 0.01) gl_FragColor = vec4(0, 0, 0, 1.0);
 
-          if (inverse && dist < 0.0) gl_FragColor = vec4(0, 0, 0, 0.0);
-          if (!inverse && dist > 0.0) gl_FragColor = vec4(0, 0, 0, 0.0);
+          bool s = dist < 0.0 && dist > -surface;
+          if (inverse && s) gl_FragColor = vec4(0, 0, 0, 0.0);
+          if (!inverse && !s) gl_FragColor = vec4(0, 0, 0, 0.0);
           #else
           float aspect = r;
           vec2 uv = vec2( (vUv.x - 0.5) * aspect, (vUv.y - 0.5)) + vec2(0.5);

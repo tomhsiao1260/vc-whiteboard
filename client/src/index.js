@@ -12,9 +12,9 @@ async function init() {
   const viewer = new ViewerCore({ volumeMeta, segmentMeta })
 
   loading()
-  // update(viewer)
-  // labeling(viewer)
-  snapshot(viewer, 'segment')
+  update(viewer)
+  labeling(viewer)
+  // snapshot(viewer, 'segment')
 }
 
 function update(viewer) {
