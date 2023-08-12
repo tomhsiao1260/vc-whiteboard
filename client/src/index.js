@@ -14,7 +14,7 @@ async function init() {
   loading()
   // update(viewer)
   // labeling(viewer)
-  snapshot(viewer, 'layer')
+  snapshot(viewer, 'segment')
 }
 
 function update(viewer) {
@@ -144,21 +144,22 @@ async function snapshot(viewer, mode) {
 
   for (const key in options) {
     const vID = options[key]
+    const { clip } = viewer.volumeMeta.nrrd[vID]
+    const filename = `${mode}-${clip.z}-${clip.d}`
     // comment out this line to snapshot all
     if (vID > 2) break;
-    await snapshotOnce(viewer, mode, vID)
+    await snapshotOnce(viewer, mode, vID, filename)
+    await new Promise((res) => setTimeout(res, 100))
   }
 }
 
-async function snapshotOnce(viewer, mode, vID) {
+async function snapshotOnce(viewer, mode, vID, filename) {
+  viewer.params.mode = mode
+  viewer.params.layers.select = vID
   await updateViewer(viewer)
   if (!viewer.renderer) return
 
-  viewer.params.mode = mode
-  viewer.params.layers.select = vID
-  const filename = `${mode}-${vID}`
   const imgData = viewer.renderer.domElement.toDataURL('image/png')
-
   const link = document.createElement('a')
   link.href = imgData
   link.download = filename
