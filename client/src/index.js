@@ -12,8 +12,9 @@ async function init() {
   const viewer = new ViewerCore({ volumeMeta, segmentMeta })
 
   loading()
-  update(viewer)
-  labeling(viewer)
+  // update(viewer)
+  // labeling(viewer)
+  snapshot(viewer, 'layer')
 }
 
 function update(viewer) {
@@ -21,14 +22,18 @@ function update(viewer) {
   updateGUI(viewer)
 }
 
-function updateViewer(viewer) {
-  const { mode } = viewer.params
+async function updateViewer(viewer) {
+  const loadingDiv = document.querySelector('#loading')
+  if (loadingDiv) loadingDiv.style.display = 'inline'
 
-  if (mode === 'segment') { modeA(viewer) }
-  if (mode === 'volume') { modeB(viewer) }
-  if (mode === 'volume-segment') { modeC(viewer) }
-  if (mode === 'layer') { modeC(viewer) }
-  if (mode === 'grid layer') { modeC(viewer) }
+  const { mode } = viewer.params
+  if (mode === 'segment') { await modeA(viewer) }
+  if (mode === 'volume') { await modeB(viewer) }
+  if (mode === 'volume-segment') { await modeC(viewer) }
+  if (mode === 'layer') { await modeC(viewer) }
+  if (mode === 'grid layer') { await modeC(viewer) }
+
+  if (loadingDiv) loadingDiv.style.display = 'none'
 }
 
 let gui
@@ -62,46 +67,34 @@ function updateGUI(viewer) {
 }
 
 // segment mode
-function modeA(viewer) {
+async function modeA(viewer) {
   viewer.clear()
   const segment = viewer.updateSegment()
 
-  const loadingDiv = document.querySelector('#loading')
-  loadingDiv.style.display = 'inline'
-
-  segment.then(() => viewer.render())
+  await segment.then(() => viewer.render())
     .then(() => { console.log(`segment ${viewer.params.layers.select} is loaded`) })
-    .then(() => { loadingDiv.style.display = 'none' })
 }
 
 // volume mode
-function modeB(viewer) {
+async function modeB(viewer) {
   viewer.clear()
   const volume = viewer.updateVolume()
 
-  const loadingDiv = document.querySelector('#loading')
-  loadingDiv.style.display = 'inline'
-
-  volume.then(() => viewer.render())
+  await volume.then(() => viewer.render())
     .then(() => { console.log(`volume ${viewer.params.layers.select} is loaded`) })
-    .then(() => { loadingDiv.style.display = 'none' })
 }
 
 // volume-segment mode
-function modeC(viewer) {
+async function modeC(viewer) {
   viewer.clear()
   const volume = viewer.updateVolume()
   const segment = viewer.updateSegment()
 
-  const loadingDiv = document.querySelector('#loading')
-  loadingDiv.style.display = 'inline'
-
-  Promise.all([volume, segment])
+  await Promise.all([volume, segment])
     .then(() => viewer.clipSegment())
     .then(() => viewer.updateSegmentSDF())
     .then(() => viewer.render())
     .then(() => { console.log(`volume-segment ${viewer.params.layers.select} is loaded`) })
-    .then(() => { loadingDiv.style.display = 'none' })
 }
 
 // loading div element
@@ -144,5 +137,31 @@ function labeling(viewer) {
       updateViewer(viewer)
     }
   })
+}
+
+async function snapshot(viewer, mode) {
+  const { options } = viewer.params.layers
+
+  for (const key in options) {
+    const vID = options[key]
+    // comment out this line to snapshot all
+    if (vID > 2) break;
+    await snapshotOnce(viewer, mode, vID)
+  }
+}
+
+async function snapshotOnce(viewer, mode, vID) {
+  await updateViewer(viewer)
+  if (!viewer.renderer) return
+
+  viewer.params.mode = mode
+  viewer.params.layers.select = vID
+  const filename = `${mode}-${vID}`
+  const imgData = viewer.renderer.domElement.toDataURL('image/png')
+
+  const link = document.createElement('a')
+  link.href = imgData
+  link.download = filename
+  link.click()
 }
 
