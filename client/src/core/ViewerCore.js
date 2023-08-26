@@ -11,8 +11,7 @@ import { GenerateSDFMaterial } from './GenerateSDFMaterial'
 import { RenderSDFLayerMaterial } from './RenderSDFLayerMaterial'
 
 export default class ViewerCore {
-  constructor({ volumeMeta, segmentMeta }) {
-    this.renderer = null
+  constructor({ data, renderer }) {
     this.scene = null
     this.camera = null
     this.clipGeometry = null
@@ -21,8 +20,9 @@ export default class ViewerCore {
 
     this.volumeList = {}
     this.segmentList = {}
-    this.volumeMeta = volumeMeta
-    this.segmentMeta = segmentMeta
+    this.volumeMeta = data.volumeMeta
+    this.segmentMeta = data.segmentMeta
+    this.renderer = renderer
     this.render = this.render.bind(this)
     this.canvas = document.querySelector('.webgl')
     this.inverseBoundsMatrix = new THREE.Matrix4()
@@ -43,13 +43,6 @@ export default class ViewerCore {
   }
 
   init() {
-    // renderer setup
-    this.renderer = new THREE.WebGLRenderer({ antialias: true, canvas: this.canvas })
-    this.renderer.setPixelRatio(window.devicePixelRatio)
-    this.renderer.setSize(window.innerWidth, window.innerHeight)
-    this.renderer.setClearColor(0, 0)
-    this.renderer.outputColorSpace = THREE.SRGBColorSpace
-
     // scene setup
     this.scene = new THREE.Scene()
     this.scene.add(this.boxHelper)
