@@ -11,9 +11,10 @@ import { GenerateSDFMaterial } from './GenerateSDFMaterial'
 import { RenderSDFLayerMaterial } from './RenderSDFLayerMaterial'
 
 export default class ViewerCore {
-  constructor({ data, renderer }) {
+  constructor({ data, renderer, canvas }) {
     this.scene = null
     this.camera = null
+    this.controls = null
     this.clipGeometry = null
     this.focusGeometry = null
     this.bvh = null
@@ -22,9 +23,9 @@ export default class ViewerCore {
     this.segmentList = {}
     this.volumeMeta = data.volumeMeta
     this.segmentMeta = data.segmentMeta
+    this.canvas = canvas
     this.renderer = renderer
     this.render = this.render.bind(this)
-    this.canvas = document.querySelector('.webgl')
     this.inverseBoundsMatrix = new THREE.Matrix4()
     this.boxHelper = new THREE.Box3Helper(new THREE.Box3())
     this.cmtextures = { viridis: new THREE.TextureLoader().load(textureViridis) }
@@ -65,8 +66,8 @@ export default class ViewerCore {
       false
     )
 
-    const controls = new OrbitControls(this.camera, this.canvas)
-    controls.addEventListener('change', this.render)
+    // camera controls
+    this.controls = new OrbitControls(this.camera, this.canvas)
 
     // list all layer options
     for (let i = 0; i < this.volumeMeta.nrrd.length; i++) {
