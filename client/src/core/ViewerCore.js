@@ -26,15 +26,22 @@ export default class ViewerCore {
     this.canvas = canvas
     this.renderer = renderer
     this.render = this.render.bind(this)
+
     this.inverseBoundsMatrix = new THREE.Matrix4()
     this.boxHelper = new THREE.Box3Helper(new THREE.Box3())
     this.cmtextures = { viridis: new THREE.TextureLoader().load(textureViridis) }
     this.volumePass = new FullScreenQuad(new VolumeMaterial())
     this.layerPass = new FullScreenQuad(new RenderSDFLayerMaterial())
 
+    this.buffer = {}
+    this.buffer['segment'] = new THREE.WebGLRenderTarget(data.size.w, data.size.w)
+    this.buffer['volume'] = new THREE.WebGLRenderTarget(data.size.w, data.size.w)
+    this.buffer['volume-segment'] = new THREE.WebGLRenderTarget(data.size.w, data.size.w)
+    this.buffer['layer'] = new THREE.WebGLRenderTarget(data.size.w, data.size.w)
+    this.buffer['grid layer'] = new THREE.WebGLRenderTarget(data.size.w, data.size.w)
+
     this.params = {}
-    this.params.mode = 'layer'
-    // this.params.mode = 'volume-segment'
+    this.params.mode = null
     this.params.surface = 0.003
     this.params.layer = 0
     this.params.inverse = false
@@ -454,12 +461,16 @@ export default class ViewerCore {
   render() {
     if (!this.renderer) return
 
+    const { mode } = this.params
+    this.renderer.setRenderTarget(this.buffer[ mode ])
+    this.renderer.clear()
+
     // segment mode
-    if (this.params.mode === 'segment') {
+    if (mode === 'segment') {
       this.renderer.render(this.scene, this.camera)
     }
     // volume & volume-segment mode
-    if (this.params.mode === 'volume' || this.params.mode === 'volume-segment') {
+    if (mode === 'volume' || mode === 'volume-segment') {
       this.camera.updateMatrixWorld()
 
       const id = this.params.layers.select
@@ -471,18 +482,18 @@ export default class ViewerCore {
       // change
       this.volumePass.material.uniforms.thickness.value = shape.d
       this.volumePass.material.uniforms.renderthreshold.value = 0.15 // For ISO renderstyle
-      this.volumePass.material.uniforms.segmentMode.value = (this.params.mode === 'volume-segment')
+      this.volumePass.material.uniforms.segmentMode.value = (mode === 'volume-segment')
       this.volumePass.material.uniforms.projectionInverse.value.copy(this.camera.projectionMatrixInverse)
       this.volumePass.material.uniforms.sdfTransformInverse.value.copy(new THREE.Matrix4()).invert().premultiply(this.inverseBoundsMatrix).multiply(this.camera.matrixWorld)
       this.volumePass.render(this.renderer)
     }
     // layer & grid layer mode
-    if (this.params.mode === 'layer' || this.params.mode === 'grid layer') {
+    if (mode === 'layer' || mode === 'grid layer') {
       const id = this.params.layers.select
       const clip = this.volumeMeta.nrrd[id].clip
       const shape = this.volumeMeta.nrrd[id].shape
 
-      const gridMode = this.params.mode === 'layer' ? 0 : 1
+      const gridMode = mode === 'layer' ? 0 : 1
       if (gridMode !== this.layerPass.material.defines.DISPLAY_GRID) {
         this.layerPass.material.defines.DISPLAY_GRID = gridMode
         this.layerPass.material.needsUpdate = true
