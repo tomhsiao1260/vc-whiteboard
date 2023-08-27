@@ -8,26 +8,28 @@ import React, { useEffect, useState } from 'react'
  * * - useEffect(()=>{ volumeViewer();}, [])
  * * 
  */
-import volumeViewer from "./core/index"
+
 import GUI from './components/GUI';
-import Card from './components/Card';
+import CardComponent from './components/Card';
+import useVolumeViewer from './hooks/useVolumeViewer';
+import Card from "./core/Card.js"
+import useCardData from './hooks/useCardData';
 
 export default function App() {
 
     // cardInstance.list
     const [dummyData, setDummyData] = useState([] /** api to get cardInstances' List */);
 
-    useEffect(() => {
-        volumeViewer();
-    }, [])
+    useVolumeViewer();
 
+    // useCardData();
 
 
     return (
         <div className="relative">
             <GUI />
             {dummyData.map(card =>
-                <Card card={card} />
+                < CardComponent card={card} />
             )}
             <canvas className='webgl'></canvas>
         </div>
