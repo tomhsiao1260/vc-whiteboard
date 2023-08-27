@@ -1,0 +1,19 @@
+/** The css files in this project is based on postcss. */
+/** View postcss.config.js & https://www.postcss.parts/ to see more. */
+/* 
+  * avilable features: 
+  * css nesting
+  * tailwindcss features
+  * auto prefixing
+  * cssnano
+*/
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
