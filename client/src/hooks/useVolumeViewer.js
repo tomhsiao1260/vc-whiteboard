@@ -1,9 +1,10 @@
 import { useEffect } from "react";
-import volumeViewer from "../core";
+import Application from "../core/Application";
 
-export default (...args) => {
+export default () => {
   useEffect(() => {
-    const vv = new volumeViewer(...args);
-    console.log(vv.canvas);
+    new Application({
+      $canvas: document.querySelector(".webgl"),
+    });
   }, []);
 };
