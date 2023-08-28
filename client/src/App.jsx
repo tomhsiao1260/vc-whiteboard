@@ -21,7 +21,7 @@ export default function App() {
         <div className="relative">
             <Info />
             <Hint />
-            <About />
+            {/*<About />*/}
             <Social />
             <canvas className='webgl'></canvas>
         </div>
