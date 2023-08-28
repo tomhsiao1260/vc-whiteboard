@@ -23,6 +23,10 @@ body {
   color: white;
   background-color: black;
   font-family: monospace;
+  
+  option {
+    background-color: black;
+  }
 
   .webgl {
     background-color: black;
