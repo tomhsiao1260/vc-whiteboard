@@ -109,7 +109,6 @@ export default class CardSet {
 
     this.viewer.render();
     this.time.trigger("tick");
-    debugger;
     loadingDIV.style.display = "none";
   }
 
