@@ -89,7 +89,7 @@ export default class CardSet {
   async updateViewer(viewer, mouse) {
     const { mode } = viewer.params
     const loadingDIV = this.setLoadingText(mouse)
-
+  
     if (mode === 'segment') { await this.modeA(viewer) }
     if (mode === 'volume') { await this.modeB(viewer) }
     if (mode === 'volume-segment') { await this.modeC(viewer) }
