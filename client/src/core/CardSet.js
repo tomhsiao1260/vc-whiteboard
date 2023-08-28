@@ -26,9 +26,10 @@ export default class CardSet {
   }
 
   async setViewer() {
+    const { width, height } = this.sizes.viewport;
     const volumeMeta = await Loader.getVolumeMeta();
     const segmentMeta = await Loader.getSegmentMeta();
-    const data = { volumeMeta, segmentMeta, size: { w: 500, h: 500 } };
+    const data = { volumeMeta, segmentMeta, size: { w: 500, h: 500 * height / width } };
     this.viewer = new ViewerCore({
       data,
       renderer: this.renderer,
@@ -70,13 +71,14 @@ export default class CardSet {
   }
 
   create(mode, mouse, center) {
+    const { width, height } = this.sizes.viewport;
     const canvas = this.$card;
-    const geometry = new THREE.PlaneGeometry(1, 1);
+    const geometry = new THREE.PlaneGeometry(1, 1 * height / width);
     const material = new CopyShader();
     const card = new THREE.Mesh(geometry, material);
 
     material.uniforms.tDiffuse.value = this.viewer.buffer[mode].texture;
-    card.userData = { mode, center, canvas, w: 1, h: 1 };
+    card.userData = { mode, center, canvas, w: 1, h: 1 * height / width };
     card.position.copy(center);
     this.focusCard = card;
     this.list.push(card);
