@@ -20,6 +20,9 @@
 
 body {
   overflow: hidden;
+  color: white;
+  background-color: black;
+  font-family: monospace;
 
   .webgl {
     background-color: black;
