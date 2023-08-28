@@ -11,7 +11,7 @@
 export default {
   plugins: {
     // postcss integration pack
-    "postcss-preset-env": { stage: 0 },
+    "tailwindcss/nesting": {},
     // code compression for css
     cssnano: { preset: "default" },
     // tailwindcss features
