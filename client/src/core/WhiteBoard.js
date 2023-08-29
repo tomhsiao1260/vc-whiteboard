@@ -13,7 +13,6 @@ export default class WhiteBoard {
     const material = new THREE.MeshBasicMaterial({ color: '#262626' })
     const mesh = new THREE.Mesh(geometry, material)
 
-    mesh.position.set(0, 0, -0.2)
     this.container.add(mesh)
   }
 }

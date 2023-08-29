@@ -2,6 +2,7 @@ import * as THREE from 'three'
 
 import WhiteBoard from './WhiteBoard'
 import CardSet from './CardSet'
+import CardUnwrap from './CardUnwrap'
 import GUIPanel from './GUIPanel'
 import Controls from './Controls'
 
@@ -22,6 +23,7 @@ export default class World {
     this.setControls()
     this.setWhiteBoard()
     await this.setCard()
+    await this.setCardUnwrap()
     this.setGUI()
   }
 
@@ -90,10 +92,50 @@ export default class World {
     this.time.on('tick', () => { this.cardSet.updateCanvas(this.cardSet.focusCard) })
   }
 
+  async setCardUnwrap() {
+    this.cardUnwrap = new CardUnwrap({
+      time: this.time,
+      sizes: this.sizes,
+      camera: this.camera,
+      renderer: this.renderer,
+    })
+
+    await this.cardUnwrap.setViewer()
+
+    const center = new THREE.Vector3(0, 0, 0)
+    const card = this.cardUnwrap.create('segment', this.controls.mouse, center)
+    this.container.add(card)
+
+    this.time.trigger('tick')
+
+    // show mouse pointer when hoving on a card
+    this.time.on('mouseMove', () => {
+      const intersects = this.controls.getRayCast(this.cardUnwrap.list)
+
+      if (!intersects.length) {
+        document.body.style.cursor = 'auto'
+        this.camera.controls.enablePan = true
+        return
+      }
+      document.body.style.cursor = 'pointer'
+      this.camera.controls.enablePan = false
+
+      const card = intersects[0].object
+      this.cardUnwrap.focusCard = card
+      this.cardUnwrap.updateCanvas(card)
+    })
+
+    // update card's scene
+    this.cardUnwrap.viewer.controls.addEventListener('change', () => this.cardUnwrap.updateAllBuffer())
+    // make div window fit into the current focusing card
+    this.time.on('tick', () => { this.cardUnwrap.updateCanvas(this.cardUnwrap.focusCard) })
+  }
+
   setGUI() {
     this.gui = new GUIPanel({
       mode: 'segment',
       cardSet: this.cardSet,
+      cardUnwrap: this.cardUnwrap,
     })
 
     // update GUI a card is selected

@@ -1,7 +1,6 @@
 import * as THREE from 'three'
 import { MOUSE, TOUCH } from 'three'
-// import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js'
-import { MapControls } from 'three/addons/controls/MapControls.js'
+import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js'
 
 export default class Camera {
   constructor(_option) {
@@ -19,7 +18,6 @@ export default class Camera {
   setInstance() {
     const { width, height } = this.sizes.viewport
     this.instance = new THREE.PerspectiveCamera(75, width / height, 0.1, 100)
-    this.instance.up.set(0, 0, 1)
     this.instance.position.z = 2
     this.container.add(this.instance)
 
@@ -31,8 +29,11 @@ export default class Camera {
   }
 
   setOrbitControls() {
-    this.controls = new MapControls(this.instance, this.renderer.domElement)
+    this.controls = new OrbitControls(this.instance, this.renderer.domElement)
     this.controls.enableDamping = false
+    this.controls.screenSpacePanning = true // pan orthogonal to world-space direction camera.up
+    this.controls.mouseButtons = { LEFT: MOUSE.PAN, MIDDLE: MOUSE.DOLLY, RIGHT: MOUSE.ROTATE }
+    this.controls.touches = { ONE: TOUCH.PAN, TWO: TOUCH.DOLLY_ROTATE }
 
     this.controls.addEventListener('change', () => this.time.trigger('tick'))
   }

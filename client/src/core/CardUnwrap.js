@@ -1,9 +1,9 @@
 import * as THREE from 'three'
 import Loader from './Loader'
-import ViewerCore from './core/ViewerCore'
+import ViewerCoreWrap from './core/ViewerCoreWrap'
 import { CopyShader } from './core/CopyShader'
 
-export default class CardSet {
+export default class CardUnwrap {
   constructor(_option) {
     this.time = _option.time
     this.sizes = _option.sizes
@@ -31,7 +31,7 @@ export default class CardSet {
     const volumeMeta = await Loader.getVolumeMeta()
     const segmentMeta = await Loader.getSegmentMeta()
     const data = { volumeMeta, segmentMeta, size: { w: 500, h: 500 *  height / width } }
-    this.viewer = new ViewerCore({ data, renderer: this.renderer, canvas: this.$card })
+    this.viewer = new ViewerCoreWrap({ data, renderer: this.renderer, canvas: this.$card })
   }
 
   setLoadingText(mouse) {
@@ -72,12 +72,12 @@ export default class CardSet {
   create(mode, mouse, center) {
     const { width, height } = this.sizes.viewport
     const canvas = this.$card
-    const geometry = new THREE.PlaneGeometry(1, 1)
+    const geometry = new THREE.PlaneGeometry(2, 1)
     const material = new CopyShader()
     const card = new THREE.Mesh(geometry, material)
 
     material.uniforms.tDiffuse.value = this.viewer.buffer[ mode ].texture
-    card.userData = { mode, center, canvas, w: 1, h: 1 }
+    card.userData = { mode, center, canvas, w: 2, h: 1 }
     card.position.copy(center)
     this.focusCard = card
     this.list.push(card)
@@ -90,13 +90,9 @@ export default class CardSet {
 
   async updateViewer(viewer, mouse) {
     const { mode } = viewer.params
-    const loadingDIV = this.setLoadingText(mouse)
+    const loadingDIV = this.setLoadingText(new THREE.Vector2())
 
-    if (mode === 'segment') { await this.modeA(viewer) }
-    if (mode === 'volume') { await this.modeB(viewer) }
-    if (mode === 'volume-segment') { await this.modeC(viewer) }
-    if (mode === 'layer') { await this.modeC(viewer) }
-    if (mode === 'grid layer') { await this.modeC(viewer) }
+    await this.modeA(viewer)
 
     this.viewer.render()
     this.time.trigger('tick')
@@ -106,12 +102,6 @@ export default class CardSet {
   updateAllBuffer() {
     this.viewer.params.mode = 'segment'
     this.viewer.render()
-    this.viewer.params.mode = 'volume'
-    this.viewer.render()
-    this.viewer.params.mode = 'volume-segment'
-    this.viewer.render()
-    this.viewer.params.mode = 'layer'
-    this.viewer.render()
 
     this.time.trigger('tick')
   }
@@ -119,26 +109,7 @@ export default class CardSet {
   // segment mode
   async modeA(viewer) {
     viewer.clear()
-    const segment = viewer.updateSegment()
-    await segment.then(() => { console.log(`segment ${viewer.params.layers.select} is loaded`) })
-  }
-
-  // volume mode
-  async modeB(viewer) {
-    viewer.clear()
-    const volume = viewer.updateVolume()
-    await volume.then(() => { console.log(`volume ${viewer.params.layers.select} is loaded`) })
-  }
-
-  // volume-segment mode
-  async modeC(viewer) {
-    viewer.clear()
-    const volume = viewer.updateVolume()
-    const segment = viewer.updateSegment()
-
-    await Promise.all([volume, segment])
-      .then(() => viewer.clipSegment())
-      .then(() => viewer.updateSegmentSDF())
-      .then(() => { console.log(`volume-segment ${viewer.params.layers.select} is loaded`) })
+    const segment = await viewer.updateSegment()
+    // await segment.then(() => { console.log(`segment ${viewer.params.layers.select} is loaded`) })
   }
 }

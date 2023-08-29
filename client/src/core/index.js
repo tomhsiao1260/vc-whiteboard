@@ -1,5 +1,5 @@
 import Application from './Application.js'
 
-new Application({
+window.application = new Application({
     $canvas: document.querySelector('.webgl'),
 })

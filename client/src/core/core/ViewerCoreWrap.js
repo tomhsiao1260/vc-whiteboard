@@ -4,12 +4,15 @@ import textureViridis from './textures/cm_viridis.png'
 import { MeshBVH } from 'three-mesh-bvh'
 import { FullScreenQuad } from 'three/examples/jsm/postprocessing/Pass'
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls'
+import { ArcballControls } from 'three/addons/controls/ArcballControls.js'
 import * as BufferGeometryUtils from 'three/examples/jsm/utils/BufferGeometryUtils'
 
 import { MaskMaterial } from './MaskMaterial'
 import { VolumeMaterial } from './VolumeMaterial'
 import { GenerateSDFMaterial } from './GenerateSDFMaterial'
 import { RenderSDFLayerMaterial } from './RenderSDFLayerMaterial'
+import { SolidMaterial } from './SolidMaterial'
+import { OBJLoader } from 'three/examples/jsm/loaders/OBJLoader.js'
 
 export default class ViewerCore {
   constructor({ data, renderer, canvas }) {
@@ -46,12 +49,11 @@ export default class ViewerCore {
     this.buffer['grid layer'] = new THREE.WebGLRenderTarget(data.size.w, data.size.h)
 
     this.params = {}
-    this.params.mode = null
-    this.params.surface = 0.003
-    this.params.layer = 0
-    this.params.alpha = 0.0
-    this.params.inverse = true
-    this.params.layers = { select: 8, options: {} }
+    this.params.mode = 'segment'
+    this.params.flatten = 1.0
+    this.params.alpha = 1.0
+    this.params.flip = true
+    this.params.adjust = 0.2
 
     this.init()
   }
@@ -59,12 +61,9 @@ export default class ViewerCore {
   init() {
     // scene setup
     this.scene = new THREE.Scene()
-    this.scene.add(this.boxHelper)
-    this.scene.add(this.boxHelperLayer)
-
     // camera setup
     this.camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 50)
-    this.camera.position.copy(new THREE.Vector3(0.4, -0.4, -1.0).multiplyScalar(1.0))
+    this.camera.position.copy(new THREE.Vector3(-0.5, 0.9, 0.5).multiplyScalar(1.0))
     this.camera.up.set(0, -1, 0)
     this.camera.far = 5
     this.camera.updateProjectionMatrix()
@@ -81,15 +80,15 @@ export default class ViewerCore {
     )
 
     // camera controls
-    this.controls = new OrbitControls(this.camera, this.canvas)
+    this.controls = new ArcballControls(this.camera, this.canvas)
 
     // list all layer options
-    for (let i = 0; i < this.volumeMeta.nrrd.length; i++) {
-      const { clip } = this.volumeMeta.nrrd[i]
-      const start = clip.z
-      const end = clip.z + clip.d
-      this.params.layers.options[ `${start} to ${end}` ] = i
-    }
+    // for (let i = 0; i < this.volumeMeta.nrrd.length; i++) {
+    //   const { clip } = this.volumeMeta.nrrd[i]
+    //   const start = clip.z
+    //   const end = clip.z + clip.d
+    //   this.params.layers.options[ `${start} to ${end}` ] = i
+    // }
   }
 
   clear() {
@@ -138,100 +137,45 @@ export default class ViewerCore {
   }
 
   async updateSegment() {
-    if (!this.volumeMeta) { console.log('volume meta.json not found'); return }
-    if (!this.segmentMeta) { console.log('segment meta.json not found'); return }
+    this.solidMaterial = new SolidMaterial()
 
-    const deleteList = []
-    const createList = []
+    const data = await fetch('segment/segment.json').then(res => res.json())
+    const textureLoader = new THREE.TextureLoader()
+    const segmentTexture = textureLoader.load('segment/20230509182749-texture.png')
+    const maskTexture = textureLoader.load('segment/20230509182749-mask.png')
 
-    const id = this.params.layers.select
-    const vTarget = this.volumeMeta.nrrd[id]
-    const vc = vTarget.clip
+    const center = new THREE.Vector3().fromArray(data.center)
+    const tifsize = new THREE.Vector2().fromArray(data.tifsize)
+    const normal = new THREE.Vector3().fromArray(data.normal).normalize()
+    const boundingbox = new THREE.Vector3().fromArray(data.boundingbox)
+    const basevectorX = new THREE.Vector3().fromArray(data.basevectors[0]).normalize()
+    const basevectorY = new THREE.Vector3().fromArray(data.basevectors[1]).normalize()
 
-    // decide which segmentation to delete or create
-    for (let i = 0; i < this.segmentMeta.obj.length; i++) {
-      const sTarget = this.segmentMeta.obj[i]
-      const sID = sTarget.id
-      const sc = sTarget.clip
+    this.solidMaterial.uniforms.uFlatten.value = this.params.flatten
+    this.solidMaterial.uniforms.uFlip.value = this.params.flip
+    this.solidMaterial.uniforms.uAlpha.value = this.params.alpha
+    this.solidMaterial.uniforms.uArea.value = data.area
+    this.solidMaterial.uniforms.uCenter.value = center
+    this.solidMaterial.uniforms.uNormal.value = normal
+    this.solidMaterial.uniforms.uTifsize.value = tifsize
+    this.solidMaterial.uniforms.uBasevectorX.value = basevectorX
+    this.solidMaterial.uniforms.uBasevectorY.value = basevectorY
+    this.solidMaterial.uniforms.uTexture.value = segmentTexture
+    this.solidMaterial.uniforms.uMask.value = maskTexture
 
-      const state = {}
-      state.current = false
-      state.previous = (this.segmentList[sID]) ? true : false
+    const obj = await new OBJLoader().loadAsync('segment/20230509182749.obj')
 
-      if (vc.x + vc.w >= sc.x && sc.x + sc.w >= vc.x) {
-        if (vc.y + vc.h >= sc.y && sc.y + sc.h >= vc.y) {
-          if (vc.z + vc.d >= sc.z && sc.z + sc.d >= vc.z) {
-            state.current = true
-          }
-        }
-      }
-      if (state.previous && !state.current) { deleteList.push(sTarget) }
-      if (!state.previous && state.current) { createList.push(sTarget) }
-    }
+    const solid = obj
+    solid.traverse((child) => {
+      if (child instanceof THREE.Mesh) { child.material = this.solidMaterial }
+    });
 
-    // delete
-    deleteList.forEach((sTarget) => {
-      const sID = sTarget.id
-      delete this.segmentList[sID]
+    const scale = 0.5 / boundingbox.length()
+    const shift = center.clone().multiplyScalar(scale)
 
-      const mesh = this.scene.getObjectByName(sID)
-      if (mesh) {
-        mesh.geometry.dispose()
-        mesh.material.dispose()
-        mesh.geometry = null
-        mesh.material = null
-        this.scene.remove(mesh)
-      }
-    })
-
-    // create
-    const loadingList = []
-    this.normalMaterial = new MaskMaterial()
-    this.masktextures.mask.minFilter = THREE.NearestFilter
-    this.normalMaterial.uniforms.uTexture.value = this.segtextures.seg
-    this.normalMaterial.uniforms.uMask.value = this.masktextures.mask
-    this.normalMaterial.uniforms.uAlpha.value = this.params.alpha
-    const basicMaterial = new THREE.MeshBasicMaterial({ side: THREE.DoubleSide, color: 'red' })
-
-    createList.forEach((sTarget) => {
-      const sID = sTarget.id
-      this.segmentList[sID] = sTarget
-
-      const loading = Loader.getSegmentData(sID + '.obj')
-      loading.then((object) => {
-        const geometry = object.children[0].geometry                          
-        const mesh = new THREE.Mesh(geometry, this.normalMaterial)
-        mesh.userData = sTarget
-        mesh.name = sID
-        this.scene.add(mesh)
-      })
-      loadingList.push(loading)
-    })
-    await Promise.all(loadingList)
-
-    // position, scale & labeling
-    const s = 1 / Math.max(vc.w, vc.h, vc.d)
-    const center = new THREE.Vector3(- vc.x - vc.w/2, - vc.y - vc.h/2, - vc.z - vc.d/2)
-    this.scene.children.forEach((mesh) => {
-      const sID = mesh.userData.id
-      if (sID) {
-        mesh.scale.set(s, s, s)
-        mesh.position.copy(center.clone().multiplyScalar(s))
-
-        const isFocus = this.segmentList[sID].focus
-        const isNormal = mesh.material.type === 'MeshNormalMaterial'
-        if (isFocus && isNormal) { mesh.material = basicMaterial }
-        if (!isFocus && !isNormal) { mesh.material = this.normalMaterial }
-      }
-    })
-
-    const layer = 0.5
-
-    // helper
-    this.boxHelper.box.max.set(vc.w * s / 2,  vc.h * s / 2,  vc.d * s / 2)
-    this.boxHelper.box.min.set(-vc.w * s / 2, -vc.h * s / 2, -vc.d * s / 2)
-    this.boxHelperLayer.box.max.set(vc.w * s / 2,  vc.h * s / 2,  -vc.d * s / 2 + layer * vc.d * s + 0.02)
-    this.boxHelperLayer.box.min.set(-vc.w * s / 2, -vc.h * s / 2, -vc.d * s / 2 + layer * vc.d * s)
+    solid.position.sub(shift)
+    solid.scale.set(scale, scale, scale)
+    this.scene.add(solid)
   }
 
   clipSegment() {
@@ -484,7 +428,7 @@ export default class ViewerCore {
 
     // segment mode
     if (mode === 'segment') {
-      this.normalMaterial.uniforms.uAlpha.value = this.params.alpha
+      this.solidMaterial.uniforms.uFlatten.value = this.params.flatten
       this.renderer.render(this.scene, this.camera)
     }
     // volume & volume-segment mode
