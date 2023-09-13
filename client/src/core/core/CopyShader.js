@@ -1,4 +1,4 @@
-import { ShaderMaterial } from "three";
+import { ShaderMaterial } from "three"
 
 // https://github.com/mrdoob/three.js/blob/master/examples/jsm/shaders/CopyShader.js
 

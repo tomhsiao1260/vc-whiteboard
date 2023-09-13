@@ -2,8 +2,7 @@ import * as THREE from 'three'
 
 import WhiteBoard from './WhiteBoard'
 import CardSet from './CardSet'
-import CardUnwrap from './CardUnwrap'
-import GUIPanel from './GUIPanel'
+// import GUIPanel from './GUIPanel'
 import Controls from './Controls'
 
 export default class World {
@@ -19,12 +18,10 @@ export default class World {
     this.start()
   }
 
-  async start() {
+  start() {
     this.setControls()
     this.setWhiteBoard()
-    await this.setCard()
-    await this.setCardUnwrap()
-    this.setGUI()
+    this.setCard()
   }
 
   setControls() {
@@ -43,7 +40,7 @@ export default class World {
     this.time.trigger('tick')
   }
 
-  async setCard() {
+  setCard() {
     this.cardSet = new CardSet({
       time: this.time,
       sizes: this.sizes,
@@ -51,99 +48,78 @@ export default class World {
       renderer: this.renderer,
     })
 
-    await this.cardSet.setViewer()
-
     // generate a card when clicking
     this.time.on('mouseDown', () => {
-      if (!this.controls.spacePress) return
+      let mode
+      if (this.controls.numKeyPress[0]) mode = 'cardA'
+      if (this.controls.numKeyPress[1]) mode = 'cardB'
+      if (!mode) return
 
       const intersects = this.controls.getRayCast([ this.whiteBoard.container ])
       if (!intersects.length) return
 
       const pos = intersects[0].point
       const center = new THREE.Vector3(pos.x, pos.y, 0)
-      const card = this.cardSet.create(this.gui.mode, this.controls.mouse, center)
+      const dom = this.setDOM()
+      const card = this.cardSet.create(mode, dom, this.controls.mouse, center)
       this.container.add(card)
 
       this.time.trigger('tick')
-      this.gui.currentCard()
     })
 
-    // show mouse pointer when hoving on a card
-    this.time.on('mouseMove', () => {
-      const intersects = this.controls.getRayCast(this.cardSet.list)
+    // make the whiteboard controllable (all scene in cards remains unchanged)
+    this.time.on('spaceUp', () => {
+      document.body.style.cursor = 'auto'
+      this.camera.controls.enabled = true
+      this.cardSet.targetCard = null
 
-      if (!intersects.length) {
-        document.body.style.cursor = 'auto'
-        this.camera.controls.enablePan = true
-        return
-      }
+      this.cardSet.list.forEach((card) => {
+        const { dom } = card.userData
+        dom.style.display = 'none'
+      })
+    })
+
+    // fix the whiteboard (scene in selected card is controllable)
+    this.time.on('spaceDown', () => {
+      document.body.style.cursor = 'auto'
+      this.camera.controls.enabled = false
+
+      const intersects = this.controls.getRayCast(this.cardSet.list)
+      if (!intersects.length) return
       document.body.style.cursor = 'pointer'
-      this.camera.controls.enablePan = false
 
       const card = intersects[0].object
-      this.cardSet.focusCard = card
-      this.cardSet.updateCanvas(card)
+      const { dom, viewer } = card.userData
+      this.cardSet.targetCard = card
+
+      this.cardSet.list.forEach((c) => {
+        const v = c.userData.viewer
+        v.controls.enabled = false
+      })
+      viewer.controls.enabled = true
+
+      const [ pbl, ptr ] = this.cardSet.updateCanvas(card)
+      const { width, height } = this.sizes.viewport
+
+      dom.style.left = `${ (pbl.x + 1) * width * 0.5 }px`
+      dom.style.bottom = `${ (pbl.y + 1) * height * 0.5 }px`
+      dom.style.width = `${ (ptr.x - pbl.x) * width * 0.5 }px`
+      dom.style.height = `${ (ptr.y - pbl.y) * height * 0.5 }px`
+      dom.style.display = 'inline'
     })
+  } 
+ 
+  setDOM() {
+    const cardDOM = document.createElement('div')
 
-    // update card's scene
-    this.cardSet.viewer.controls.addEventListener('change', () => this.cardSet.updateAllBuffer())
-    // make div window fit into the current focusing card
-    this.time.on('tick', () => { this.cardSet.updateCanvas(this.cardSet.focusCard) })
-  }
+    cardDOM.className = 'cardDOM'
+    cardDOM.style.backgroundColor = 'rgba(0, 0, 0, 0.0)'
+    cardDOM.style.border = '1px solid white'
+    cardDOM.style.display = 'none'
+    cardDOM.style.position = 'absolute'
+    document.body.appendChild(cardDOM)
 
-  async setCardUnwrap() {
-    this.cardUnwrap = new CardUnwrap({
-      time: this.time,
-      sizes: this.sizes,
-      camera: this.camera,
-      renderer: this.renderer,
-    })
-
-    await this.cardUnwrap.setViewer()
-
-    const center = new THREE.Vector3(0, 0, 0)
-    const card = this.cardUnwrap.create('segment', this.controls.mouse, center)
-    this.container.add(card)
-
-    this.time.trigger('tick')
-
-    // show mouse pointer when hoving on a card
-    this.time.on('mouseMove', () => {
-      const intersects = this.controls.getRayCast(this.cardUnwrap.list)
-
-      if (!intersects.length) {
-        document.body.style.cursor = 'auto'
-        this.camera.controls.enablePan = true
-        return
-      }
-      document.body.style.cursor = 'pointer'
-      this.camera.controls.enablePan = false
-
-      const card = intersects[0].object
-      this.cardUnwrap.focusCard = card
-      this.cardUnwrap.updateCanvas(card)
-    })
-
-    // update card's scene
-    this.cardUnwrap.viewer.controls.addEventListener('change', () => this.cardUnwrap.updateAllBuffer())
-    // make div window fit into the current focusing card
-    this.time.on('tick', () => { this.cardUnwrap.updateCanvas(this.cardUnwrap.focusCard) })
-  }
-
-  setGUI() {
-    this.gui = new GUIPanel({
-      mode: 'segment',
-      cardSet: this.cardSet,
-      cardUnwrap: this.cardUnwrap,
-    })
-
-    // update GUI a card is selected
-    this.time.on('mouseDown', () => {
-      const intersects = this.controls.getRayCast(this.cardSet.list)
-
-      if (!intersects.length) { this.gui.newCard(); return }
-      this.gui.currentCard()
-    })
+    return cardDOM
   }
 }
+

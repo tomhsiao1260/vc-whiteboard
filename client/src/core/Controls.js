@@ -8,6 +8,7 @@ export default class Controls {
 
     this.mousePress = false
     this.spacePress = false
+    this.numKeyPress = [ false, false ]
 
     this.setMouse()
   }
@@ -39,8 +40,20 @@ export default class Controls {
     })
 
     // whether space key is pressed or not
-    window.addEventListener('keydown', (e) => { this.spacePress = (e.code == 'Enter') })
-    window.addEventListener('keyup', (e) => { this.spacePress = !(e.code == 'Enter') })
+    window.addEventListener('keydown', (e) => {
+      this.spacePress = (e.code === 'Space')
+      this.numKeyPress[0] = (e.code === 'Digit1')
+      this.numKeyPress[1] = (e.code === 'Digit2')
+
+      if (this.spacePress) this.time.trigger('spaceDown')
+    })
+    window.addEventListener('keyup', (e) => {
+      if (this.spacePress) this.time.trigger('spaceUp')
+
+      this.spacePress = false
+      this.numKeyPress[0] = false
+      this.numKeyPress[1] = false
+    })
   }
 
   getRayCast(meshes) {

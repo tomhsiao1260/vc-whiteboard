@@ -16,8 +16,9 @@ export default class Camera {
   }
 
   setInstance() {
+    const scope = 1.5
     const { width, height } = this.sizes.viewport
-    this.instance = new THREE.PerspectiveCamera(75, width / height, 0.1, 100)
+    this.instance = new THREE.OrthographicCamera(-scope * width / height, scope * width / height, scope, -scope, 0.1, 100)
     this.instance.position.z = 2
     this.container.add(this.instance)
 
@@ -33,7 +34,7 @@ export default class Camera {
     this.controls.enableDamping = false
     this.controls.screenSpacePanning = true // pan orthogonal to world-space direction camera.up
     this.controls.mouseButtons = { LEFT: MOUSE.PAN, MIDDLE: MOUSE.DOLLY, RIGHT: MOUSE.ROTATE }
-    this.controls.touches = { ONE: TOUCH.PAN, TWO: TOUCH.DOLLY_ROTATE }
+    this.controls.touches = { ONE: TOUCH.PAN, TWO: TOUCH.DOLLY_PAN }
 
     this.controls.addEventListener('change', () => this.time.trigger('tick'))
   }
