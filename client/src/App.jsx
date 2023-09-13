@@ -9,7 +9,7 @@ import React, { useEffect, useState, useRef } from 'react'
 
 import useVolumeViewer from './hooks/useVolumeViewer';
 import Info from './components/Info';
-import Hint from './components/Hint';
+import Hint from './components/Hint/Hint';
 import Social from './components/Social';
 import About from './components/About';
 
@@ -20,7 +20,20 @@ export default function App() {
     return (
         <div className="relative">
             <Info />
-            <Hint />
+            <Hint>
+                <Hint.HotKey hotkey={["num", "LEFT"]}>
+                    {"<To generate Card>"}
+                </Hint.HotKey>
+                <Hint.HotKey hotkey={["DRAG"]}>
+                    {"<To move Screen>"}
+                </Hint.HotKey>
+                <Hint.HotKey hotkey={["SPACE", "DRAG"]}>
+                    {"<To generate card>"}
+                </Hint.HotKey>
+                <Hint.HotKey hotkey={["ALT", "/"]}>
+                    {"<Open HotKey Pannel>"}
+                </Hint.HotKey>
+            </Hint>
             {/*<About />*/}
             <Social />
             <canvas className='webgl'></canvas>
