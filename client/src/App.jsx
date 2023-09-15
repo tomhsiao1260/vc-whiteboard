@@ -45,7 +45,7 @@ export default function App() {
                 {/*<About />*/}
                 <Social />
                 {cardList.map(({ id }) =>
-                    <Card options={{ id }} />
+                    <Card key={id} options={{ id }} />
                 )}
                 <canvas className='webgl'></canvas>
             </div>

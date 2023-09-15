@@ -7,7 +7,7 @@ export default (WB) => {
   useEffect(() => {
     if (WB) {
       // when card generate
-      WB.API.on("generate", (data) => {
+      WB.API.on("cardGenerate", (data) => {
         setCardList([...cardList, data]);
       });
     }

@@ -69,11 +69,14 @@ export default class World {
 
       this.time.trigger("tick");
 
+
       // this api is the bridge from Whiteboard Engine to React App.
-      this.app.API.generate({
+      this.app.API.cardGenerate({
         segmentID,
         id: card.uuid,
-        pos: card.position,
+        pos: {
+          x: undefined, y: undefined
+        }
       });
     });
 
@@ -106,6 +109,8 @@ export default class World {
       const card = intersects[0].object;
       const { dom, viewer } = card.userData;
       this.cardSet.targetCard = card;
+
+      this.app.API.cardSelect(card.uuid);
 
       this.cardSet.list.forEach((c) => {
         const v = c.userData.viewer;
