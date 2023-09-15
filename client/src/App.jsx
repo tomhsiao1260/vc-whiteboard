@@ -5,7 +5,7 @@
  * * It will load when the App component is mounted.
  * * 
  */
-import React, { useEffect, useState, useRef, createContext } from 'react'
+import React, { useEffect, useState, useRef } from 'react'
 
 import useVolumeViewer from './hooks/useVolumeViewer';
 import Info from './components/Info';
@@ -41,7 +41,7 @@ export default function App() {
                 </Hint>
                 {/*<About />*/}
                 <Social />
-                d            <canvas className='webgl'></canvas>
+                <canvas className='webgl'></canvas>
             </div>
         </AppContext.Provider>
 
