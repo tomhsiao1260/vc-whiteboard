@@ -33,10 +33,10 @@ export default function App() {
                         {"<To generate Card>"}
                     </Hint.HotKey>
                     <Hint.HotKey hotkey={["DRAG"]}>
-                        {"<To move Screen>"}
+                        {"<To move Whiteboard>"}
                     </Hint.HotKey>
                     <Hint.HotKey hotkey={["SPACE", "DRAG"]}>
-                        {"<To generate card>"}
+                        {"<To update scene in Card>"}
                     </Hint.HotKey>
                     <Hint.HotKey hotkey={["ALT", "/"]}>
                         {"<Open HotKey Pannel>"}

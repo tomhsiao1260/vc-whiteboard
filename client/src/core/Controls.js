@@ -44,6 +44,7 @@ export default class Controls {
       this.spacePress = (e.code === 'Space')
       this.numKeyPress[0] = (e.code === 'Digit1')
       this.numKeyPress[1] = (e.code === 'Digit2')
+      this.numKeyPress[2] = (e.code === 'Digit3')
 
       if (this.spacePress) this.time.trigger('spaceDown')
     })
@@ -53,6 +54,7 @@ export default class Controls {
       this.spacePress = false
       this.numKeyPress[0] = false
       this.numKeyPress[1] = false
+      this.numKeyPress[2] = false
     })
   }
 

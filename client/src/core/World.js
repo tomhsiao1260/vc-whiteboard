@@ -52,10 +52,11 @@ export default class World {
 
     // generate a card when clicking
     this.time.on("mouseDown", () => {
-      let mode;
-      if (this.controls.numKeyPress[0]) mode = "cardA";
-      if (this.controls.numKeyPress[1]) mode = "cardB";
-      if (!mode) return;
+      let segmentID;
+      if (this.controls.numKeyPress[0]) segmentID = "20230522181603";
+      if (this.controls.numKeyPress[1]) segmentID = "20230509182749";
+      if (this.controls.numKeyPress[2]) segmentID = "20230702185752";
+      if (!segmentID) return;
 
       const intersects = this.controls.getRayCast([this.whiteBoard.container]);
       if (!intersects.length) return;
@@ -63,16 +64,26 @@ export default class World {
       const pos = intersects[0].point;
       const center = new THREE.Vector3(pos.x, pos.y, 0);
       const dom = this.setDOM();
-      const card = this.cardSet.create(mode, dom, this.controls.mouse, center);
+      const card = this.cardSet.create(segmentID, dom, this.controls.mouse, center);
       this.container.add(card);
 
       this.time.trigger("tick");
 
       // this api is the bridge from Whiteboard Engine to React App.
       this.app.API.generate({
+        segmentID,
         id: card.uuid,
-        pos,
+        pos: card.position,
       });
+    });
+
+    // mouse pointer
+    this.time.on('mouseMove', () => {
+      document.body.style.cursor = 'auto';
+
+      const intersects = this.controls.getRayCast(this.cardSet.list);
+      if (!intersects.length) return;
+      document.body.style.cursor = 'pointer';
     });
 
     // make the whiteboard controllable (all scene in cards remains unchanged)
@@ -89,12 +100,8 @@ export default class World {
 
     // fix the whiteboard (scene in selected card is controllable)
     this.time.on("spaceDown", () => {
-      document.body.style.cursor = "auto";
-      this.camera.controls.enabled = false;
-
       const intersects = this.controls.getRayCast(this.cardSet.list);
       if (!intersects.length) return;
-      document.body.style.cursor = "pointer";
 
       const card = intersects[0].object;
       const { dom, viewer } = card.userData;

@@ -1,5 +1,5 @@
 import * as THREE from 'three'
-import CardA from './core/CardA'
+import Card from './core/Card'
 import { CopyShader } from './core/CopyShader'
 
 export default class CardSet {
@@ -13,11 +13,8 @@ export default class CardSet {
     this.targetCard = null
   }
 
-  create(mode, dom, mouse, center) {
-    let id = null
-    if (mode === 'cardA') id = '20230503225234'
-    if (mode === 'cardB') id = '20230504093154'
-    const viewer = new CardA({ renderer: this.renderer, canvas: dom, id })
+  create(segmentID, dom, mouse, center) {
+    const viewer = new Card({ renderer: this.renderer, canvas: dom, segmentID })
 
     viewer.controls.addEventListener('change', () => {
       this.render()
@@ -30,7 +27,7 @@ export default class CardSet {
 
     const card = new THREE.Mesh(geometry, material)
     card.position.copy(center)
-    card.userData = { center, mode, viewer, dom, w: 1, h: 1 }
+    card.userData = { center, segmentID, viewer, dom, w: 1, h: 1 }
 
     viewer.render()
     this.list.push(card)

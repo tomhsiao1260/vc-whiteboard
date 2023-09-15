@@ -1,16 +1,16 @@
 import * as THREE from 'three'
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls'
 
-export default class CardA {
-  constructor({ renderer, canvas, id }) {
+export default class Card {
+  constructor({ renderer, canvas, segmentID }) {
     this.scene = null
     this.camera = null
     this.controls = null
     this.renderer = null
 
-    this.id = id
     this.canvas = canvas
     this.renderer = renderer
+    this.segmentID = segmentID
     this.buffer = new THREE.WebGLRenderTarget(500, 500)
 
     this.init()
@@ -42,8 +42,9 @@ export default class CardA {
     this.controls = new OrbitControls(this.camera, this.canvas)
 
     let mesh = null
-    if (this.id === '20230503225234') mesh = new THREE.Mesh(new THREE.BoxGeometry(1, 1, 1), new THREE.MeshNormalMaterial())
-    if (this.id === '20230504093154') mesh = new THREE.Mesh(new THREE.SphereGeometry(0.5, 5, 5), new THREE.MeshNormalMaterial())
+    if (this.segmentID === '20230522181603') mesh = new THREE.Mesh(new THREE.BoxGeometry(1, 1, 1), new THREE.MeshNormalMaterial())
+    if (this.segmentID === '20230509182749') mesh = new THREE.Mesh(new THREE.SphereGeometry(0.5, 5, 5), new THREE.MeshNormalMaterial())
+    if (this.segmentID === '20230702185752') mesh = new THREE.Mesh(new THREE.SphereGeometry(0.5, 5, 5), new THREE.MeshBasicMaterial())
     this.scene.add(mesh)
   }
 
