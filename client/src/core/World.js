@@ -71,13 +71,8 @@ export default class World {
       this.time.trigger("tick");
 
       // this api is the bridge from Whiteboard Engine to React App.
-      this.app.API.cardGenerate({
-        segmentID,
-        id: card.uuid,
-        pos: {
-          x: undefined, y: undefined
-        }
-      });
+      const { id, x, y, width, height } = this.getScreenPosition(card);
+      this.app.API.cardGenerate({ segmentID, id, x, y, width, height });
     });
 
     // mouse pointer & send card position info
@@ -93,17 +88,9 @@ export default class World {
       const card = intersects[0].object;
       const { dom, viewer, w, h } = card.userData;
 
-      const center = card.position.clone()
-      const corner = new THREE.Vector3(center.x + w/2, center.y + h/2, center.z)
-      center.project(this.camera.instance)
-      corner.project(this.camera.instance)
+      const info = this.getScreenPosition(card);
 
-      const x = this.sizes.width * (1 + center.x) / 2
-      const y = this.sizes.height * (1 - center.y) / 2
-      const width = this.sizes.width * Math.abs(corner.x - center.x) / 2
-      const height = this.sizes.height * Math.abs(corner.y - center.y) / 2
-
-      this.app.API.cardMove({ id: card.uuid, x, y, width, height });
+      this.app.API.cardMove(info);
     });
 
     // make the whiteboard controllable (all scene in cards remains unchanged)
@@ -132,16 +119,8 @@ export default class World {
       const { dom, viewer, w, h } = card.userData;
 
       if (!this.cardSet.targetCard || (this.cardSet.targetCard && this.cardSet.targetCard.uuid !== card.uuid)) {
-        const center = card.position.clone();
-        const corner = new THREE.Vector3(center.x + w/2, center.y + h/2, center.z);
-        center.project(this.camera.instance);
-        corner.project(this.camera.instance);
-
-        const x = this.sizes.width * (1 + center.x) / 2;
-        const y = this.sizes.height * (1 - center.y) / 2;
-        const width = this.sizes.width * Math.abs(corner.x - center.x) / 2;
-        const height = this.sizes.height * Math.abs(corner.y - center.y) / 2;
-        this.app.API.cardSelect({ id: card.uuid, x, y, width, height });
+        const info = this.getScreenPosition(card);
+        this.app.API.cardSelect(info);
       }
       this.cardSet.targetCard = card;
 
@@ -160,6 +139,22 @@ export default class World {
       dom.style.height = `${(ptr.y - pbl.y) * height * 0.5}px`;
       dom.style.display = "inline";
     });
+  }
+
+  getScreenPosition(card) {
+    const { w, h } = card.userData;
+    const center = card.position.clone();
+    const corner = new THREE.Vector3(center.x + w/2, center.y + h/2, center.z);
+    center.project(this.camera.instance);
+    corner.project(this.camera.instance);
+
+    const id = card.uuid;
+    const x = this.sizes.width * (1 + center.x) / 2;
+    const y = this.sizes.height * (1 - center.y) / 2;
+    const width = this.sizes.width * Math.abs(corner.x - center.x) / 2;
+    const height = this.sizes.height * Math.abs(corner.y - center.y) / 2;
+
+    return { id, x, y, width, height }
   }
 
   setDOM() {
