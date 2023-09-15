@@ -1,6 +1,6 @@
 import { useCallback, useState } from "react";
 
-const useCardRender = () => {
+const useCardRender = (WB, id) => {
   /**
    * $ renderer object
    * * x: number | undefined
@@ -8,7 +8,6 @@ const useCardRender = () => {
    * * z: number | undefined
    * * isLoad: boolean
    */
-
   const [renderer, setRenderer] = useState(null);
 
   useCallback(() => {
