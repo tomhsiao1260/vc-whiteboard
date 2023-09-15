@@ -17,7 +17,7 @@ export default (WB, id) => {
     // do the threejs rendering work, and provide data that react app need.
     // call setRenderer to update State
     // e.g. setRenderer({x: 1, y: 2, z: 3, isLoad: true})
-  }, [renderer]);
+  }, [renderer, WB]);
 
   return renderer;
 };

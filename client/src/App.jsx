@@ -20,7 +20,7 @@ import Card from './components/Card/Card';
 export default function App() {
 
     const WB = useVolumeViewer();
-    const cardList = useCardList();
+    const cardList = useCardList(WB);
 
     return (
         <AppContext.Provider value={{
