@@ -22,7 +22,6 @@ export default (WB) => {
 
       WB.API.on("cardMove", ({ id, x, y, width, height }) => {
         // WB.API.cardMove({ x, y, width, height, id });
-        // console.log("cardMove", id, x, y, width, height);
       });
 
       WB.API.on("cardLoad", (id) => {

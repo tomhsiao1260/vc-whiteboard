@@ -75,22 +75,64 @@ export default class World {
       this.app.API.cardGenerate({ segmentID, id, x, y, width, height });
     });
 
-    // mouse pointer & send card position info
+    // mouse pointer
     this.time.on('mouseMove', () => {
       document.body.style.cursor = 'auto';
 
       const intersects = this.controls.getRayCast(this.cardSet.list);
       if (!intersects.length) return;
       document.body.style.cursor = 'pointer';
+    });
 
-      if (!this.app.API.cardMove) return
+    // drag the card
+    this.cardDonwPos = null
+    this.mouseDownPos = null
+    this.mouseNowPos = null
+
+    this.time.on('mouseDown', () => {
+      const intersects = this.controls.getRayCast(this.cardSet.list);
+      if (!intersects.length) return;
 
       const card = intersects[0].object;
-      const { dom, viewer, w, h } = card.userData;
+      this.cardSet.targetCard = card;
+      this.mouseDownPos = intersects[0].point;
+      this.cardDownPos = card.position.clone();
+      this.camera.controls.enabled = false;
+    });
+    this.time.on('mouseMove', () => {
+      if (!this.controls.mousePress) { this.cardDonwPos = null; this.mouseDownPos = null; this.mouseNowPos = null; return; }
+      if (!this.mouseDownPos || !this.cardSet.targetCard || this.controls.spacePress) { return; }
 
-      const info = this.getScreenPosition(card);
+      const intersects = this.controls.getRayCast([this.whiteBoard.container]);
+      if (!intersects.length) return;
 
+      this.mouseNowPos = intersects[0].point;
+      const pos = this.cardDownPos.clone().add(this.mouseNowPos).sub(this.mouseDownPos);
+      this.cardSet.targetCard.position.copy(pos);
+      this.cardSet.targetCard.userData.center = pos;
+
+      const { dom } = this.cardSet.targetCard.userData;
+      const [ pbl, ptr ] = this.cardSet.updateCanvas(this.cardSet.targetCard);
+      const { width, height } = this.sizes.viewport;
+
+      dom.style.left = `${(pbl.x + 1) * width * 0.5}px`;
+      dom.style.bottom = `${(pbl.y + 1) * height * 0.5}px`;
+      dom.style.width = `${(ptr.x - pbl.x) * width * 0.5}px`;
+      dom.style.height = `${(ptr.y - pbl.y) * height * 0.5}px`;
+      dom.style.display = "none";
+
+      const info = this.getScreenPosition(this.cardSet.targetCard);
       this.app.API.cardMove(info);
+
+      this.time.trigger("tick");
+    });
+    this.time.on('mouseUp', () => {
+      this.camera.controls.enabled = true;
+      if (!this.cardSet.targetCard) return;
+
+      const { dom } = this.cardSet.targetCard.userData;
+      dom.style.display = "none";
+      this.cardSet.targetCard = null;
     });
 
     // make the whiteboard controllable (all scene in cards remains unchanged)

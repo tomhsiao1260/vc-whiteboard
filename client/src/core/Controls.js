@@ -26,7 +26,7 @@ export default class Controls {
     // after pressing down the mouse button
     window.addEventListener('pointerdown', (e) => {
       const name = e.srcElement.className
-      if (name !== 'webgl' && name !== 'cardDOM') return
+      // if (name !== 'webgl' && name !== 'cardDOM') return
 
       this.mousePress = true
       this.time.trigger('mouseDown')
