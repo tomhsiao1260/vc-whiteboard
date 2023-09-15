@@ -20,18 +20,22 @@ export default (WB, id) => {
 
     WB.API.on("cardMove", ({ x, y, width, height }) => {
       // WB.API.cardMove({ x, y, width, height, id });
+      // console.log("cardMove", x, y, width, height);
     });
 
     WB.API.on("cardLoad", (id) => {
       // WB.API.cardLoad(id);
+      console.log("cardLoad", id);
     })
 
     WB.API.on("cardSelect", ({ x, y, width, height }) => {
       // WB.API.cardSelect(x, y, width, height);
+      console.log("cardSelect", id);
     })
 
     WB.API.on("cardLeave", (id) => {
       // WB.API.cardLeave(id);
+      console.log("cardLeave", id);
     })
 
 

@@ -46,7 +46,8 @@ export default class Controls {
       this.numKeyPress[1] = (e.code === 'Digit2')
       this.numKeyPress[2] = (e.code === 'Digit3')
 
-      if (this.spacePress) this.time.trigger('spaceDown')
+      if (this.spacePress && e.repeat) this.time.trigger('spaceDown')
+      if (this.spacePress && !e.repeat) this.time.trigger('spaceDownStart')
     })
     window.addEventListener('keyup', (e) => {
       if (this.spacePress) this.time.trigger('spaceUp')

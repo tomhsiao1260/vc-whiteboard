@@ -4,6 +4,7 @@ import { CopyShader } from './core/CopyShader'
 
 export default class CardSet {
   constructor(_option) {
+    this.app = _option.app
     this.time = _option.time
     this.sizes = _option.sizes
     this.camera = _option.camera
@@ -31,6 +32,8 @@ export default class CardSet {
 
     viewer.render()
     this.list.push(card)
+
+    window.setTimeout(() => this.app.API.cardLoad(card.uuid), 1000)
 
     return card
   }

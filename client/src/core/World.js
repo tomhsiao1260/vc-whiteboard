@@ -44,6 +44,7 @@ export default class World {
 
   setCard() {
     this.cardSet = new CardSet({
+      app: this.app,
       time: this.time,
       sizes: this.sizes,
       camera: this.camera,
@@ -69,7 +70,6 @@ export default class World {
 
       this.time.trigger("tick");
 
-
       // this api is the bridge from Whiteboard Engine to React App.
       this.app.API.cardGenerate({
         segmentID,
@@ -80,13 +80,30 @@ export default class World {
       });
     });
 
-    // mouse pointer
+    // mouse pointer & send card position info
     this.time.on('mouseMove', () => {
       document.body.style.cursor = 'auto';
 
       const intersects = this.controls.getRayCast(this.cardSet.list);
       if (!intersects.length) return;
       document.body.style.cursor = 'pointer';
+
+      if (!this.app.API.cardMove) return
+
+      const card = intersects[0].object;
+      const { dom, viewer, w, h } = card.userData;
+
+      const center = card.position.clone()
+      const corner = new THREE.Vector3(center.x + w/2, center.y + h/2, center.z)
+      center.project(this.camera.instance)
+      corner.project(this.camera.instance)
+
+      const x = this.sizes.width * (1 + center.x) / 2
+      const y = this.sizes.height * (1 - center.y) / 2
+      const width = this.sizes.width * Math.abs(corner.x - center.x) / 2
+      const height = this.sizes.height * Math.abs(corner.y - center.y) / 2
+
+      this.app.API.cardMove({ x, y, width, height });
     });
 
     // make the whiteboard controllable (all scene in cards remains unchanged)
@@ -99,18 +116,23 @@ export default class World {
         const { dom } = card.userData;
         dom.style.display = "none";
       });
+
     });
 
     // fix the whiteboard (scene in selected card is controllable)
     this.time.on("spaceDown", () => {
+      this.camera.controls.enabled = false;
       const intersects = this.controls.getRayCast(this.cardSet.list);
-      if (!intersects.length) return;
+
+      if (!intersects.length && this.cardSet.targetCard) { this.app.API.cardLeave(this.cardSet.targetCard.uuid); }
+      if (intersects.length && this.cardSet.targetCard && this.cardSet.targetCard.uuid !== intersects[0].object.uuid) { this.app.API.cardLeave(this.cardSet.targetCard.uuid); }
+      if (!intersects.length) { this.cardSet.targetCard = null; return; }
 
       const card = intersects[0].object;
       const { dom, viewer } = card.userData;
-      this.cardSet.targetCard = card;
 
-      this.app.API.cardSelect(card.uuid);
+      if (!this.cardSet.targetCard) { this.app.API.cardSelect(card.uuid); }
+      this.cardSet.targetCard = card;
 
       this.cardSet.list.forEach((c) => {
         const v = c.userData.viewer;
@@ -118,7 +140,7 @@ export default class World {
       });
       viewer.controls.enabled = true;
 
-      const [pbl, ptr] = this.cardSet.updateCanvas(card);
+      const [ pbl, ptr ] = this.cardSet.updateCanvas(card);
       const { width, height } = this.sizes.viewport;
 
       dom.style.left = `${(pbl.x + 1) * width * 0.5}px`;
