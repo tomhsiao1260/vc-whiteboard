@@ -48,14 +48,13 @@ const hintStyles = {
         'fixed top-[50%] left-[50%] translate-x-[-50%] translate-y-[-50%]',
         "bg-[#111] opacity-80",
         "p-8",
-        "flex flex-col gap-8",
-        "text-lg")
+        "flex flex-col gap-8")
 }
 
 Hint.HotKey = (props) => {
     return (
         <li className={hintHotKeyStyles.hintHotKey} >
-            <div className='flex gap-2'>
+            <div className='flex gap-2 text-base'>
                 {props.hotkey.map((h, i) =>
                     <span key={h}>
                         <u>{h}</u>{i !== props.hotkey.length - 1 ? " +" : ""}
