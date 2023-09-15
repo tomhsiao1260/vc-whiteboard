@@ -55,13 +55,13 @@ const hintStyles = {
 Hint.HotKey = (props) => {
     return (
         <li className={hintHotKeyStyles.hintHotKey} >
-            <span>
+            <div className='flex gap-2'>
                 {props.hotkey.map((h, i) =>
-                    <div key={h}>
-                        <u>{h}</u>{i !== props.hotkey.length - 1 ? " + " : ""}
-                    </div>
+                    <span key={h}>
+                        <u>{h}</u>{i !== props.hotkey.length - 1 ? " +" : ""}
+                    </span>
                 )}
-            </span>
+            </div>
             <span>{props.children}</span>
         </li >
     )
