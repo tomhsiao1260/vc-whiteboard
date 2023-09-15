@@ -1,4 +1,4 @@
-import { useCallback, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 
 const useCardRender = (WB, id) => {
   /**
@@ -10,7 +10,7 @@ const useCardRender = (WB, id) => {
    */
   const [renderer, setRenderer] = useState(null);
 
-  useCallback(() => {
+  useEffect(() => {
     // yao's code (may be a function call)
     // do the threejs rendering work, and provide data that react app need.
     // call setRenderer to update State
