@@ -131,16 +131,16 @@ export default class World {
       const card = intersects[0].object;
       const { dom, viewer, w, h } = card.userData;
 
-      if (!this.cardSet.targetCard) {
-        const center = card.position.clone()
-        const corner = new THREE.Vector3(center.x + w/2, center.y + h/2, center.z)
-        center.project(this.camera.instance)
-        corner.project(this.camera.instance)
+      if (!this.cardSet.targetCard || (this.cardSet.targetCard && this.cardSet.targetCard.uuid !== card.uuid)) {
+        const center = card.position.clone();
+        const corner = new THREE.Vector3(center.x + w/2, center.y + h/2, center.z);
+        center.project(this.camera.instance);
+        corner.project(this.camera.instance);
 
-        const x = this.sizes.width * (1 + center.x) / 2
-        const y = this.sizes.height * (1 - center.y) / 2
-        const width = this.sizes.width * Math.abs(corner.x - center.x) / 2
-        const height = this.sizes.height * Math.abs(corner.y - center.y) / 2
+        const x = this.sizes.width * (1 + center.x) / 2;
+        const y = this.sizes.height * (1 - center.y) / 2;
+        const width = this.sizes.width * Math.abs(corner.x - center.x) / 2;
+        const height = this.sizes.height * Math.abs(corner.y - center.y) / 2;
         this.app.API.cardSelect({ id: card.uuid, x, y, width, height });
       }
       this.cardSet.targetCard = card;
