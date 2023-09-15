@@ -36,7 +36,7 @@ export default function App() {
             </Hint>
             {/*<About />*/}
             <Social />
-            <canvas className='webgl'></canvas>
+d            <canvas className='webgl'></canvas>
         </div>
     )
 }
