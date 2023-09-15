@@ -4,16 +4,19 @@ import { useEffect, useState } from "react";
 
 export default (WB) => {
   const [cardList, setCardList] = useState([]);
+
   useEffect(() => {
     if (WB) {
       // when card generate
       WB.API.on("cardGenerate", (data) => {
-        setCardList([...cardList, data]);
+        setCardList([data, ...cardList,]);
       });
     }
   }, [WB, cardList]);
+
   useEffect(() => {
-    console.log(cardList);
+    // console.log(cardList);
   }, [cardList]);
+
   return cardList;
 };

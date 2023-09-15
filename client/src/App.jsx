@@ -16,11 +16,13 @@ import About from './components/About';
 import AppContext from './context/AppContext';
 import useCardList from './hooks/useCardList';
 import Card from './components/Card/Card';
+import useCardRender from './hooks/useCardRender';
 
 export default function App() {
 
     const WB = useVolumeViewer();
     const cardList = useCardList(WB);
+    const renderer = useCardRender(WB);
 
     return (
         <AppContext.Provider value={{
@@ -44,8 +46,8 @@ export default function App() {
                 </Hint>
                 {/*<About />*/}
                 <Social />
-                {cardList.map(({ id }) =>
-                    <Card key={id} options={{ id }} />
+                {cardList.map((card) =>
+                    <Card key={card.id} options={{ card, renderer }} />
                 )}
                 <canvas className='webgl'></canvas>
             </div>
