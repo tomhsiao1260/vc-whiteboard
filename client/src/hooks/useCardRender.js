@@ -1,6 +1,8 @@
 import { useCallback, useEffect, useState } from "react";
 
-const useCardRender = (WB, id) => {
+// render card (threejs part) via id, and return data that react app need.
+
+export default (WB, id) => {
   /**
    * $ renderer object
    * * x: number | undefined
