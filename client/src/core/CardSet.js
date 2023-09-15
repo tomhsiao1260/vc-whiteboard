@@ -15,20 +15,25 @@ export default class CardSet {
   }
 
   create(segmentID, dom, mouse, center) {
-    const viewer = new Card({ renderer: this.renderer, canvas: dom, segmentID })
+    const info = { segmentID, w: 1, h: 1 }
+    if (segmentID === '20230522181603') { info.w = 1.5; info.h = 1 }
+    if (segmentID === '20230509182749') { info.w = 1.5; info.h = 1 }
+    if (segmentID === '20230702185752') { info.w = 1.5; info.h = 1 }
+
+    const viewer = new Card({ renderer: this.renderer, canvas: dom, info })
 
     viewer.controls.addEventListener('change', () => {
       this.render()
       this.time.trigger('tick')
     })
 
-    const geometry = new THREE.PlaneGeometry(1, 1)
+    const geometry = new THREE.PlaneGeometry(info.w, info.h)
     const material = new CopyShader()
     material.uniforms.tDiffuse.value = viewer.buffer.texture
 
     const card = new THREE.Mesh(geometry, material)
     card.position.copy(center)
-    card.userData = { center, segmentID, viewer, dom, w: 1, h: 1 }
+    card.userData = { center, segmentID, viewer, dom, w: info.w, h: info.h }
 
     viewer.render()
     this.list.push(card)
