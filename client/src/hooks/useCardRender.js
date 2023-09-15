@@ -18,7 +18,7 @@ export default (WB, id) => {
     // call setRenderer to update State
     // e.g. setRenderer({x: 1, y: 2, z: 3, isLoad: true})
 
-    WB.API.on("cardMove", ({ x, y, width, height }) => {
+    WB.API.on("cardMove", ({ id, x, y, width, height }) => {
       // WB.API.cardMove({ x, y, width, height, id });
       // console.log("cardMove", x, y, width, height);
     });
@@ -28,9 +28,9 @@ export default (WB, id) => {
       console.log("cardLoad", id);
     })
 
-    WB.API.on("cardSelect", ({ x, y, width, height }) => {
+    WB.API.on("cardSelect", ({ id, x, y, width, height }) => {
       // WB.API.cardSelect(x, y, width, height);
-      console.log("cardSelect", id);
+      console.log("cardSelect", id, x, y, width, height);
     })
 
     WB.API.on("cardLeave", (id) => {

@@ -103,7 +103,7 @@ export default class World {
       const width = this.sizes.width * Math.abs(corner.x - center.x) / 2
       const height = this.sizes.height * Math.abs(corner.y - center.y) / 2
 
-      this.app.API.cardMove({ x, y, width, height });
+      this.app.API.cardMove({ id: card.uuid, x, y, width, height });
     });
 
     // make the whiteboard controllable (all scene in cards remains unchanged)
@@ -129,9 +129,20 @@ export default class World {
       if (!intersects.length) { this.cardSet.targetCard = null; return; }
 
       const card = intersects[0].object;
-      const { dom, viewer } = card.userData;
+      const { dom, viewer, w, h } = card.userData;
 
-      if (!this.cardSet.targetCard) { this.app.API.cardSelect(card.uuid); }
+      if (!this.cardSet.targetCard) {
+        const center = card.position.clone()
+        const corner = new THREE.Vector3(center.x + w/2, center.y + h/2, center.z)
+        center.project(this.camera.instance)
+        corner.project(this.camera.instance)
+
+        const x = this.sizes.width * (1 + center.x) / 2
+        const y = this.sizes.height * (1 - center.y) / 2
+        const width = this.sizes.width * Math.abs(corner.x - center.x) / 2
+        const height = this.sizes.height * Math.abs(corner.y - center.y) / 2
+        this.app.API.cardSelect({ id: card.uuid, x, y, width, height });
+      }
       this.cardSet.targetCard = card;
 
       this.cardSet.list.forEach((c) => {
