@@ -11,6 +11,8 @@ export default function Card(props) {
     const rendererId = renderer?.id;
     const id = card?.id;
 
+console.log(renderer)
+
     const [cardLoad, setCardLoad] = useState(false);
 
     if (!cardLoad && renderer.isLoadId === id) {
@@ -22,10 +24,10 @@ export default function Card(props) {
             className={cn(
                 styles.card,
                 css`
-            top: ${card?.y}px;
-            left: ${card?.x}px;
-            width: ${card?.width * 2}px;
-            height: ${card?.height * 2}px;
+            top: ${renderer?.y}px;
+            left: ${renderer?.x}px;
+            width: ${renderer?.width * 2}px;
+            height: ${renderer?.height * 2}px;
           `
             )}
         >

@@ -19,9 +19,12 @@ export default (WB) => {
       // do the threejs rendering work, and provide data that react app need.
       // call setRenderer to update State
       // e.g. setRenderer({x: 1, y: 2, z: 3, isLoad: true})
+      WB.API.on("cardInit", ({ id, x, y, width, height }) => {
+        setRenderer({ id, x, y, width, height });
+      });
       WB.API.on("cardMove", ({ id, x, y, width, height }) => {
         // WB.API.cardMove({ x, y, width, height, id });
-        setRenderer({ id, x, y, width, height, isLeave: false });
+        setRenderer({ id, x, y, width, height });
       });
 
       WB.API.on("cardLoad", (id) => {
@@ -36,7 +39,7 @@ export default (WB) => {
 
       WB.API.on("cardLeave", (id) => {
         // WB.API.cardLeave(id);
-        setRenderer({ id, x, y, width, height, isLeave: true });
+        setRenderer({ id, x, y, width, height });
       })
     }
 
