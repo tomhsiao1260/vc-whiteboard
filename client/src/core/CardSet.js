@@ -1,5 +1,6 @@
 import * as THREE from 'three'
 import Card from './core/Card'
+import Hint from './core/Hint'
 import { CopyShader } from './core/CopyShader'
 
 export default class CardSet {
@@ -15,33 +16,49 @@ export default class CardSet {
   }
 
   create(segmentID, dom, mouse, center) {
-    const info = { w: 1, h: 1 }
-    if (segmentID === '20230522181603') { info.w = 1.5; info.h = 1 }
-    if (segmentID === '20230509182749') { info.w = 1.5; info.h = 1 }
-    if (segmentID === '20230702185752') { info.w = 1.5; info.h = 1 }
+    const info = {}
+    if (segmentID === '20230522181603') { info.w = 2912; info.h = 1060; }
+    if (segmentID === '20230509182749') { info.w = 3278; info.h = 1090; }
+    if (segmentID === '20230702185752') { info.w = 1746; info.h = 1726; }
+    if (segmentID === ' ') { info.w = 1190 * 3; info.h = 1018 * 3; }
 
-    const viewer = new Card({
-      info,
-      canvas: dom,
-      renderer: this.renderer,
-      time: this.time,
-      app: this.app,
-    })
+    let viewer
+    if (segmentID === ' ') {
+      viewer = new Hint({
+        info,
+        canvas: dom,
+        renderer: this.renderer,
+        time: this.time,
+        app: this.app,
+      })
+      viewer
+    } else {
+      viewer = new Card({
+        info,
+        canvas: dom,
+        renderer: this.renderer,
+        time: this.time,
+        app: this.app,
+      })
+    }
 
     viewer.controls.addEventListener('change', () => {
       this.render()
       this.time.trigger('tick')
     })
 
-    const geometry = new THREE.PlaneGeometry(info.w, info.h)
+    const w = (info.w / 1500).toFixed(2)
+    const h = (info.h / 1500).toFixed(2)
+
+    const geometry = new THREE.PlaneGeometry(w, h)
     const material = new CopyShader()
     material.uniforms.tDiffuse.value = viewer.buffer.texture
 
     const card = new THREE.Mesh(geometry, material)
     card.position.copy(center)
-    card.userData = { center, segmentID, viewer, dom, w: info.w, h: info.h }
+    card.userData = { center, segmentID, viewer, dom, w, h }
 
-    viewer.create(segmentID, card.uuid)
+    viewer.create(segmentID, card.uuid, info)
     this.list.push(card)
 
     return card

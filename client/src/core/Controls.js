@@ -8,7 +8,7 @@ export default class Controls {
 
     this.mousePress = false
     this.spacePress = false
-    this.numKeyPress = [ false, false ]
+    this.numKeyPress = [ false, false, false, false ]
 
     this.setMouse()
   }
@@ -45,17 +45,20 @@ export default class Controls {
       this.numKeyPress[0] = (e.code === 'Digit1')
       this.numKeyPress[1] = (e.code === 'Digit2')
       this.numKeyPress[2] = (e.code === 'Digit3')
+      this.numKeyPress[3] = (e.code === 'Digit4')
 
       if (this.spacePress) this.time.trigger('spaceDown')
       if (this.spacePress && !e.repeat) this.time.trigger('spaceDownStart')
     })
     window.addEventListener('keyup', (e) => {
       if (this.spacePress) this.time.trigger('spaceUp')
+      if (this.numKeyPress[4]) this.time.trigger('dragUp')
 
       this.spacePress = false
       this.numKeyPress[0] = false
       this.numKeyPress[1] = false
       this.numKeyPress[2] = false
+      this.numKeyPress[3] = false
     })
   }
 

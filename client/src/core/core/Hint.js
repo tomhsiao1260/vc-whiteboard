@@ -1,16 +1,13 @@
 import * as THREE from 'three'
 import { TextureLoader } from 'three'
-import { FragmentShader } from './FragmentShader'
-import { TIFFLoader } from 'three/addons/loaders/TIFFLoader.js'
-import { ArcballControls } from 'three/addons/controls/ArcballControls.js'
+import { HintShader } from './HintShader'
+import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls'
 
-export default class Card {
+export default class Hint {
   constructor(_option) {
     this.scene = null
     this.camera = null
-    this.controls = null
     this.renderer = null
-    this.segmentID = null
 
     this.time = _option.time
     this.app = _option.app
@@ -29,29 +26,20 @@ export default class Card {
 
     // camera setup
     this.camera = new THREE.PerspectiveCamera(75, this.width / this.height, 0.1, 50)
-    this.camera.position.copy(new THREE.Vector3(0.4, -0.4, -1.0).multiplyScalar(1.0))
-    this.camera.up.set(0, -1, 0)
-    this.camera.far = 5
     this.camera.updateProjectionMatrix()
 
     // camera controls
-    this.controls = new ArcballControls(this.camera, this.canvas, this.scene)
+    this.controls = new OrbitControls(this.camera, this.canvas)
   }
 
   async create(segmentID, uuid, info) {
-    const texture = await new TIFFLoader().loadAsync(`${segmentID}.tif`)
+    const texture = await new TextureLoader().loadAsync('Stitching_Megas.png')
 
-    let mtexture = null
-    if (segmentID === '20230509182749') { mtexture = await new TextureLoader().loadAsync('20230509182749-mask.png') }
-
-    const material = new FragmentShader()
+    const material = new HintShader()
     material.uniforms.tDiffuse.value = texture
-    material.uniforms.uMask.value = mtexture
 
     const mesh = new THREE.Mesh(new THREE.PlaneGeometry(info.w / info.h, 1), material)
     this.scene.add(mesh)
-
-    this.segmentID = segmentID
 
     this.render()
     this.time.trigger('tick')

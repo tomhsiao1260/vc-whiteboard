@@ -8,11 +8,8 @@ export default function Hint(props) {
     useEffect(() => {
 
         const cb1 = (evt) => {
-            if (evt.altKey) {
-                if (evt.key === "/") {
-                    setShow(true)
-                }
-
+            if (evt.key === "/") {
+                setShow(true)
             }
         }
         // alt + /

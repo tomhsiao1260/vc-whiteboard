@@ -1,8 +1,6 @@
-import { ShaderMaterial } from "three"
+import { ShaderMaterial, DoubleSide } from "three"
 
-// https://github.com/mrdoob/three.js/blob/master/examples/jsm/shaders/CopyShader.js
-
-export class CopyShader extends ShaderMaterial {
+export class HintShader extends ShaderMaterial {
   constructor(params) {
     super({
       transparent: true,
@@ -16,7 +14,7 @@ export class CopyShader extends ShaderMaterial {
         varying vec2 vUv;
         void main() {
           vUv = uv;
-          gl_Position = projectionMatrix * modelViewMatrix * vec4( position, 1.0 );
+          gl_Position = vec4( position, 1.0 );
       }
       `,
 
@@ -26,8 +24,8 @@ export class CopyShader extends ShaderMaterial {
         varying vec2 vUv;
 
         void main() {
-          vec4 texel = texture2D( tDiffuse, vUv );
-          gl_FragColor = opacity * texel;
+          vec4 color = texture2D( tDiffuse, vUv );
+          gl_FragColor = color;
         }
       `
     });

@@ -57,6 +57,7 @@ export default class World {
       if (this.controls.numKeyPress[0]) segmentID = "20230522181603";
       if (this.controls.numKeyPress[1]) segmentID = "20230509182749";
       if (this.controls.numKeyPress[2]) segmentID = "20230702185752";
+      if (this.controls.numKeyPress[3]) segmentID = " ";
       if (!segmentID) return;
 
       const intersects = this.controls.getRayCast([this.whiteBoard.container]);
@@ -137,6 +138,9 @@ export default class World {
 
     // make the whiteboard controllable (all scene in cards remains unchanged)
     this.time.on("spaceUp", () => {
+      if (!this.cardSet.targetCard) return
+      this.app.API.cardLeave(!this.cardSet.targetCard.uuid)
+
       document.body.style.cursor = "auto";
       this.camera.controls.enabled = true;
       this.cardSet.targetCard = null;
@@ -145,7 +149,6 @@ export default class World {
         const { dom } = card.userData;
         dom.style.display = "none";
       });
-
     });
 
     // fix the whiteboard (scene in selected card is controllable)
