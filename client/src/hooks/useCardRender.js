@@ -10,7 +10,7 @@ export default (WB) => {
    * * z: number | undefined
    * * isLoad: boolean
    */
-  const [renderer, setRenderer] = useState(null);
+  const [renderer, setRenderer] = useState({});
 
   useEffect(() => {
 
@@ -19,25 +19,24 @@ export default (WB) => {
       // do the threejs rendering work, and provide data that react app need.
       // call setRenderer to update State
       // e.g. setRenderer({x: 1, y: 2, z: 3, isLoad: true})
-
       WB.API.on("cardMove", ({ id, x, y, width, height }) => {
         // WB.API.cardMove({ x, y, width, height, id });
+        setRenderer({ id, x, y, width, height, isLeave: false });
       });
 
       WB.API.on("cardLoad", (id) => {
         // WB.API.cardLoad(id);
-        // setRenderer({ ...renderer, ...{ id, isLoad: true } });
+        setRenderer({ id, isLoadId: id });
       })
 
       WB.API.on("cardSelect", ({ id, x, y, width, height }) => {
         // WB.API.cardSelect(x, y, width, height);
-        setRenderer({ ...renderer, ...{ id, x, y, width, height } });
+        setRenderer({ id, x, y, width, height });
       })
 
       WB.API.on("cardLeave", (id) => {
         // WB.API.cardLeave(id);
-        setRenderer({ ...renderer, ...{ id, isLeave: true } });
-
+        setRenderer({ id, x, y, width, height, isLeave: true });
       })
     }
 
