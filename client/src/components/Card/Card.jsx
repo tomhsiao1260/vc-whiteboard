@@ -14,9 +14,17 @@ export default function Card(props) {
     // console.log(renderer)
 
     const [cardLoad, setCardLoad] = useState(false);
+    const [cardSelected, setCardSelected] = useState(false);
 
     if (!cardLoad && renderer.isLoadId === id) {
         setCardLoad(true);
+    }
+
+    if (!cardSelected && id === rendererId) {
+        setCardSelected(true)
+    }
+    if (cardSelected && id !== rendererId) {
+        setCardSelected(false)
     }
 
     if (!cardLoad) {
@@ -37,28 +45,27 @@ export default function Card(props) {
         </div>
     }
 
-    if (rendererId === id) {
+    if (cardSelected) {
         return (
             <div
                 className={cn(
                     styles.card,
-                    css`
-            top: ${renderer?.y}px;
-            left: ${renderer?.x}px;
-            width: ${renderer?.width * 2}px;
-            height: ${renderer?.height * 2}px;
-          `
+                    "border-gray-200 border-2",
+                    css` 
+                        top: ${renderer?.y}px;
+                        left: ${renderer?.x}px;
+                        width: ${renderer?.width * 2}px;
+                        height: ${renderer?.height * 2}px;
+                        `,
                 )}
             >
-                {renderer.isLeave ||
-                    <h6 className="translate-y-[-20px] text-gray-200">
-                        {card?.segmentID}
-                    </h6>
-                }
-
+                <h6 className="translate-y-[-20px] text-gray-200">
+                    {card?.segmentID}
+                </h6>
             </div>
         );
     } else {
+        return <></>
     }
 
 

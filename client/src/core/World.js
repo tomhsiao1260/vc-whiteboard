@@ -208,7 +208,7 @@ export default class World {
 
     cardDOM.className = "cardDOM";
     cardDOM.style.backgroundColor = "rgba(0, 0, 0, 0.0)";
-    cardDOM.style.border = "1px solid white";
+    // cardDOM.style.border = "1px solid white";
     cardDOM.style.display = "none";
     cardDOM.style.position = "absolute";
     document.body.appendChild(cardDOM);

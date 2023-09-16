@@ -8,7 +8,7 @@ export default class Controls {
 
     this.mousePress = false
     this.spacePress = false
-    this.numKeyPress = [ false, false, false, false ]
+    this.numKeyPress = [false, false, false, false]
 
     this.setMouse()
   }
@@ -26,7 +26,7 @@ export default class Controls {
     // after pressing down the mouse button
     window.addEventListener('pointerdown', (e) => {
       const name = e.srcElement.className
-      console.log(name)
+      // console.log(name)
       // if (name !== 'webgl' && name !== 'cardDOM') return
 
       this.mousePress = true
