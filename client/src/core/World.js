@@ -74,6 +74,7 @@ export default class World {
       // this api is the bridge from Whiteboard Engine to React App.
       const { id, x, y, width, height } = this.getScreenPosition(card);
       this.app.API.cardGenerate({ segmentID, id, x, y, width, height });
+      this.app.API.cardInit({ segmentID, id, x, y, width, height });
     });
 
     // mouse pointer
@@ -113,7 +114,7 @@ export default class World {
       this.cardSet.targetCard.userData.center = pos;
 
       const { dom } = this.cardSet.targetCard.userData;
-      const [ pbl, ptr ] = this.cardSet.updateCanvas(this.cardSet.targetCard);
+      const [pbl, ptr] = this.cardSet.updateCanvas(this.cardSet.targetCard);
       const { width, height } = this.sizes.viewport;
 
       dom.style.left = `${(pbl.x + 1) * width * 0.5}px`;
@@ -175,7 +176,7 @@ export default class World {
       });
       viewer.controls.enabled = true;
 
-      const [ pbl, ptr ] = this.cardSet.updateCanvas(card);
+      const [pbl, ptr] = this.cardSet.updateCanvas(card);
       const { width, height } = this.sizes.viewport;
 
       dom.style.left = `${(pbl.x + 1) * width * 0.5}px`;
@@ -189,7 +190,7 @@ export default class World {
   getScreenPosition(card) {
     const { w, h } = card.userData;
     const center = card.position.clone();
-    const corner = new THREE.Vector3(center.x + w/2, center.y + h/2, center.z);
+    const corner = new THREE.Vector3(center.x + w / 2, center.y + h / 2, center.z);
     center.project(this.camera.instance);
     corner.project(this.camera.instance);
 

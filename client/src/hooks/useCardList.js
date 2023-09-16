@@ -9,7 +9,7 @@ export default (WB) => {
     if (WB) {
       // when card generate
       WB.API.on("cardGenerate", (data) => {
-        setCardList([data, ...cardList,]);
+        setCardList([data, ...cardList]);
       });
     }
   }, [WB, cardList]);
