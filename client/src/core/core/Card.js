@@ -1,5 +1,5 @@
 import * as THREE from 'three'
-// import { TIFFLoader } from 'three/addons/loaders/TIFFLoader.js'
+import { TIFFLoader } from 'three/addons/loaders/TIFFLoader.js'
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls'
 
 export default class Card {
@@ -37,8 +37,7 @@ export default class Card {
   }
 
   async create(segmentID, uuid) {
-    // await const texture = new TIFFLoader().loadAsync('20230522181603.tif')
-    console.log(segmentID)
+    // const texture = await new TIFFLoader().loadAsync('20230522181603.tif')
 
     let mesh = null
     if (segmentID === '20230522181603') mesh = new THREE.Mesh(new THREE.BoxGeometry(1, 1, 1), new THREE.MeshNormalMaterial())
