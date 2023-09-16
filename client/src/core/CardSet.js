@@ -15,12 +15,18 @@ export default class CardSet {
   }
 
   create(segmentID, dom, mouse, center) {
-    const info = { segmentID, w: 1, h: 1 }
+    const info = { w: 1, h: 1 }
     if (segmentID === '20230522181603') { info.w = 1.5; info.h = 1 }
     if (segmentID === '20230509182749') { info.w = 1.5; info.h = 1 }
     if (segmentID === '20230702185752') { info.w = 1.5; info.h = 1 }
 
-    const viewer = new Card({ renderer: this.renderer, canvas: dom, info })
+    const viewer = new Card({
+      info,
+      canvas: dom,
+      renderer: this.renderer,
+      time: this.time,
+      app: this.app,
+    })
 
     viewer.controls.addEventListener('change', () => {
       this.render()
@@ -35,10 +41,8 @@ export default class CardSet {
     card.position.copy(center)
     card.userData = { center, segmentID, viewer, dom, w: info.w, h: info.h }
 
-    viewer.render()
+    viewer.create(segmentID, card.uuid)
     this.list.push(card)
-
-    window.setTimeout(() => this.app.API.cardLoad(card.uuid), 1000)
 
     return card
   }

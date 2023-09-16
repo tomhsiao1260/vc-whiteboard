@@ -1,18 +1,21 @@
 import * as THREE from 'three'
+// import { TIFFLoader } from 'three/addons/loaders/TIFFLoader.js'
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls'
 
 export default class Card {
-  constructor({ renderer, canvas, info }) {
+  constructor(_option) {
     this.scene = null
     this.camera = null
     this.controls = null
     this.renderer = null
+    this.segmentID = null
 
-    this.canvas = canvas
-    this.renderer = renderer
-    this.segmentID = info.segmentID
-    this.width = info.w * 500
-    this.height = info.h * 500
+    this.time = _option.time
+    this.app = _option.app
+    this.canvas = _option.canvas
+    this.renderer = _option.renderer
+    this.width = _option.info.w * 500
+    this.height = _option.info.h * 500
     this.buffer = new THREE.WebGLRenderTarget(this.width, this.height)
 
     this.init()
@@ -31,12 +34,25 @@ export default class Card {
 
     // camera controls
     this.controls = new OrbitControls(this.camera, this.canvas)
+  }
+
+  async create(segmentID, uuid) {
+    // await const texture = new TIFFLoader().loadAsync('20230522181603.tif')
+    console.log(segmentID)
 
     let mesh = null
-    if (this.segmentID === '20230522181603') mesh = new THREE.Mesh(new THREE.BoxGeometry(1, 1, 1), new THREE.MeshNormalMaterial())
-    if (this.segmentID === '20230509182749') mesh = new THREE.Mesh(new THREE.SphereGeometry(1, 5, 5), new THREE.MeshNormalMaterial())
-    if (this.segmentID === '20230702185752') mesh = new THREE.Mesh(new THREE.SphereGeometry(1, 5, 5), new THREE.MeshBasicMaterial())
+    if (segmentID === '20230522181603') mesh = new THREE.Mesh(new THREE.BoxGeometry(1, 1, 1), new THREE.MeshNormalMaterial())
+    if (segmentID === '20230509182749') mesh = new THREE.Mesh(new THREE.SphereGeometry(1, 5, 5), new THREE.MeshNormalMaterial())
+    if (segmentID === '20230702185752') mesh = new THREE.Mesh(new THREE.SphereGeometry(1, 5, 5), new THREE.MeshBasicMaterial())
     this.scene.add(mesh)
+
+    this.segmentID = segmentID
+
+    window.setTimeout(() => {
+      this.render()
+      this.time.trigger('tick')
+      this.app.API.cardLoad(uuid)
+    }, 1000)
   }
 
   render() {
