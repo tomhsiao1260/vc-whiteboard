@@ -11,7 +11,7 @@ export default function Card(props) {
     const rendererId = renderer?.id;
     const id = card?.id;
 
-console.log(renderer)
+    // console.log(renderer)
 
     const [cardLoad, setCardLoad] = useState(false);
 

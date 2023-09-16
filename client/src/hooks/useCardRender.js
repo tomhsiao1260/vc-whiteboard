@@ -37,9 +37,9 @@ export default (WB) => {
         setRenderer({ id, x, y, width, height });
       })
 
-      WB.API.on("cardLeave", (id) => {
+      WB.API.on("cardLeave", ({ id }) => {
         // WB.API.cardLeave(id);
-        setRenderer({ id, x, y, width, height });
+        setRenderer({ id });
       })
     }
 
