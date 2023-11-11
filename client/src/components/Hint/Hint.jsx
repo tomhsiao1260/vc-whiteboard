@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react'
+import { useState, useEffect } from 'react'
 import { cn } from '../../utils/cn'
 
 export default function Hint(props) {
@@ -48,19 +48,23 @@ const hintStyles = {
         "flex flex-col gap-8")
 }
 
-Hint.HotKey = (props) => {
+Hint.HotKey = function HotKey(props) {
     return (
         <li className={hintHotKeyStyles.hintHotKey} >
             <div className='flex gap-2 text-base'>
+                { /*eslint-disable-next-line react/prop-types*/}
                 {props.hotkey.map((h, i) =>
                     <span key={h}>
+                        { /*eslint-disable-next-line react/prop-types*/}
                         <u>{h}</u>{i !== props.hotkey.length - 1 ? " +" : ""}
                     </span>
                 )}
             </div>
+            { /*eslint-disable-next-line react/prop-types*/}
             <span>{props.children}</span>
         </li >
     )
+
 }
 
 const hintHotKeyStyles = {

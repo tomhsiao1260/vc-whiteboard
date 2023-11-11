@@ -5,18 +5,16 @@
  * * It will load when the App component is mounted.
  * * 
  */
-import React, { useEffect, useState, useRef } from 'react'
-
 import useVolumeViewer from './hooks/useVolumeViewer';
-import Info from './components/Info';
+import Info from './components/Info/Info';
 import Hint from './components/Hint/Hint';
-import Social from './components/Social';
-import About from './components/About';
+import Social from './components/Social/Social';
 
 import AppContext from './context/AppContext';
 import useCardList from './hooks/useCardList';
 import Card from './components/Card/Card';
 import useCardRender from './hooks/useCardRender';
+import FileSystem from "./components/FileSystem/FileSystem";
 
 export default function App() {
 
@@ -30,6 +28,7 @@ export default function App() {
         }}>
             <div className="relative">
                 <Info />
+                <FileSystem />
                 <Hint>
                     <Hint.HotKey hotkey={["num", "LEFT"]}>
                         {"<To generate Card>"}
