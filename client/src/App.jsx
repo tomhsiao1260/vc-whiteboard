@@ -16,11 +16,18 @@ import Card from './components/Card/Card';
 import useCardRender from './hooks/useCardRender';
 import FileSystem from "./components/FileSystem/FileSystem";
 
+
 export default function App() {
 
     const WB = useVolumeViewer();
     const cardList = useCardList(WB);
     const renderer = useCardRender(WB);
+
+    // useEffect(() => {
+    //     PubSub.subscribe("onFileSelect", (eventName, fileObj) => {
+    //         console.log(eventName, fileObj)
+    //     })
+    // }, [])
 
     return (
         <AppContext.Provider value={{

@@ -4,12 +4,19 @@ import FileTree from "./FileTree/FileTree";
 import _ from "lodash";
 import { Resizable } from "re-resizable";
 import { cn } from "../../utils/cn";
+import PubSub from "pubsub-js";
 
 export default function FileSystem() {
   const [dir, setDir] = useState({});
   const [isResize, setIsResize] = useState(false);
-  const handleFileOnClick = (file) => {
-    console.log(file);
+  const handleFileOnClick = async (file: File) => {
+    const arraybuffer = await file.arrayBuffer();
+    const blob = new Blob([arraybuffer], { type: file.name });
+    PubSub.publish("onFileSelect", {
+      fileType: file.type,
+      fileName: file.name,
+      blob,
+    });
   };
 
   return (
