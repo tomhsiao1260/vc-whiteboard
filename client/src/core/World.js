@@ -1,11 +1,15 @@
 import * as THREE from "three";
-import { nanoid } from "nanoid";
 
 import WhiteBoard from "./WhiteBoard";
 import CardSet from "./CardSet";
 // import GUIPanel from './GUIPanel'
 import Controls from "./Controls";
 import Application from "./Application";
+import { HintShader } from './core/HintShader';
+
+import PubSub from "pubsub-js";
+// import { TIFFLoader } from 'three/addons/loaders/TIFFLoader.js';
+// import { OBJLoader } from 'three/examples/jsm/loaders/OBJLoader.js'
 
 export default class World {
   constructor(_option) {
@@ -25,6 +29,25 @@ export default class World {
     this.setControls();
     this.setWhiteBoard();
     this.setCard();
+
+    // PubSub.subscribe("onFileSelect", async(eventName, fileObj) => {
+    //   console.log(eventName, fileObj)
+
+    //   const blobUrl = URL.createObjectURL(fileObj.blob)
+
+    //   // const texture = await new THREE.TextureLoader().loadAsync('Stitching_Megas.png')
+    //   const obj = await new OBJLoader().loadAsync(blobUrl)
+    //   // const texture = new THREE.TextureLoader().load(blobUrl)
+    //   console.log(obj)
+
+    //   // const material = new HintShader()
+    //   // material.uniforms.tDiffuse.value = texture
+
+    //   const mesh = new THREE.Mesh(obj.children[0].geometry, new THREE.MeshBasicMaterial())
+    //   // const mesh = new THREE.Mesh(new THREE.PlaneGeometry(1, 1), material)
+    //   mesh.position.set(0, 0, 0.5)
+    //   this.container.add(mesh)
+    // })
   }
 
   setControls() {
@@ -50,6 +73,30 @@ export default class World {
       camera: this.camera,
       renderer: this.renderer,
     });
+
+    this.time.on('tick', () => {
+      const cameraInfo = {}
+      cameraInfo.x = this.camera.instance.position.x.toFixed(5)
+      cameraInfo.y = this.camera.instance.position.y.toFixed(5)
+      cameraInfo.z = this.camera.instance.position.z.toFixed(5)
+
+      const cardSetInfo = []
+      this.cardSet.list.forEach((card) => {
+        const cardInfo = {}
+
+        cardInfo.segmentID = card.userData.segmentID
+        cardInfo.x = card.userData.center.x.toFixed(5)
+        cardInfo.y = card.userData.center.y.toFixed(5)
+
+        cardSetInfo.push(cardInfo)
+      })
+
+      const config = {}
+      config.camera = cameraInfo
+      config.cards = cardSetInfo
+
+      PubSub.publish("onConfigUpdate", config)
+    })
 
     // generate a card when clicking
     this.time.on("mouseDown", () => {

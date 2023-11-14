@@ -31,7 +31,6 @@ export default class CardSet {
         time: this.time,
         app: this.app,
       })
-      viewer
     } else {
       viewer = new Card({
         info,

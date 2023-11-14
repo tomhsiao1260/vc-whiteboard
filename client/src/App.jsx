@@ -24,9 +24,9 @@ export default function App() {
     const renderer = useCardRender(WB);
 
     // useEffect(() => {
-    //     PubSub.subscribe("onFileSelect", (eventName, fileObj) => {
-    //         console.log(eventName, fileObj)
-    //     })
+        // PubSub.subscribe("onFileSelect", (eventName, fileObj) => {
+        //     console.log(eventName, fileObj)
+        // })
     // }, [])
 
     return (

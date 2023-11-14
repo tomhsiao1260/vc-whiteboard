@@ -17,6 +17,7 @@ export default class Application {
     this.setCamera();
     this.setWorld();
   }
+
   API = {
     on: (eventName, cb) => {
       this.API[eventName] = cb;
