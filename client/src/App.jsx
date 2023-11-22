@@ -36,9 +36,6 @@ export default function App() {
     // })
     // }, [])
 
-    const { clicked, position } = useRightClick()
-
-
     return (
         <AppContext.Provider value={{
             whiteboard
@@ -67,7 +64,7 @@ export default function App() {
                     <Card key={card.id} options={{ card, renderer }} />
                 )}
                 {/* Card (url) */}
-                {clicked && <UrlCardMenu position={position} />}
+                {<UrlCardMenu />}
                 <canvas className='webgl'></canvas>
             </div>
         </AppContext.Provider>
