@@ -17,7 +17,11 @@ import useCardRender from './hooks/useCardRender';
 import FileSystem from "./components/FileSystem/FileSystem";
 import useUrlCardList from "./hooks/useUrlCardList";
 import useRightClick from "./hooks/useRightClick";
-import UrlCardMenu from "./components/UrlCardMenu/UrlCardMenu";
+import UrlCardMenu from "./components/UrlCard/UrlCard.jsx";
+import UrlCard from "./components/UrlCard/UrlCard.jsx";
+import { useEffect } from "react";
+import PubSub from "pubsub-js";
+import { nanoid } from "nanoid";
 
 export default function App() {
 
@@ -35,6 +39,14 @@ export default function App() {
     //     console.log(eventName, fileObj)
     // })
     // }, [])
+
+    const { clicked, position } = useRightClick()
+
+    useEffect(() => {
+        if (clicked) {
+            PubSub.publish("onUrlCardGenerated", { id: nanoid(), x: position[0], y: position[1], width: 40, height: 80 })
+        }
+    }, [clicked, position])
 
     return (
         <AppContext.Provider value={{
@@ -64,7 +76,9 @@ export default function App() {
                     <Card key={card.id} options={{ card, renderer }} />
                 )}
                 {/* Card (url) */}
-                {<UrlCardMenu />}
+                {/* {urlCardList.map((card) =>
+                    <UrlCard key={card.id} options={{ card, renderer }} />
+                )} */}
                 <canvas className='webgl'></canvas>
             </div>
         </AppContext.Provider>
