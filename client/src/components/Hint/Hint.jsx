@@ -6,24 +6,14 @@ export default function Hint(props) {
     const [show, setShow] = useState(true);
 
     useEffect(() => {
-
-        const cb1 = (evt) => {
-            if (evt.key === "/") {
-                setShow(true)
-            }
-        }
-        // alt + /
-        window.addEventListener("keydown", cb1)
-
         // disable
-        const cb2 = (e) => {
+        const handleDisable = () => {
             setShow(false)
         }
-        window.addEventListener("mousedown", cb2)
+        window.addEventListener("mousedown", handleDisable)
 
         return () => {
-            window.removeEventListener("keydown", cb1)
-            window.removeEventListener("mousedown", cb2)
+            window.removeEventListener("mousedown", handleDisable)
         }
     }, [show]);
 

@@ -56,9 +56,9 @@ export default function App() {
                     <Hint.HotKey hotkey={["SPACE", "DRAG"]}>
                         {"<To update scene in Card>"}
                     </Hint.HotKey>
-                    <Hint.HotKey hotkey={["ALT", "/"]}>
+                    {/* <Hint.HotKey hotkey={["ALT", "/"]}>
                         {"<Open HotKey Pannel>"}
-                    </Hint.HotKey>
+                    </Hint.HotKey> */}
                 </Hint>
                 {/*<About />*/}
                 <Social />
