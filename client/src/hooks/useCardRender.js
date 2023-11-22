@@ -1,8 +1,8 @@
-import { useCallback, useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 
 // render card (threejs part) via id, and return data that react app need.
 
-export default (WB) => {
+export default (whiteboard) => {
   /**
    * $ renderer object
    * * x: number | undefined
@@ -14,36 +14,36 @@ export default (WB) => {
 
   useEffect(() => {
 
-    if (WB) {
+    if (whiteboard) {
       // yao's code (may be a function call)
       // do the threejs rendering work, and provide data that react app need.
       // call setRenderer to update State
       // e.g. setRenderer({x: 1, y: 2, z: 3, isLoad: true})
-      WB.API.on("cardInit", ({ id, x, y, width, height }) => {
+      whiteboard.API.on("cardInit", ({ id, x, y, width, height }) => {
         setRenderer({ id, x, y, width, height });
       });
-      WB.API.on("cardMove", ({ id, x, y, width, height }) => {
+      whiteboard.API.on("cardMove", ({ id, x, y, width, height }) => {
         // WB.API.cardMove({ x, y, width, height, id });
         setRenderer({ id, x, y, width, height });
       });
 
-      WB.API.on("cardLoad", (id) => {
+      whiteboard.API.on("cardLoad", (id) => {
         // WB.API.cardLoad(id);
         setRenderer({ id, isLoadId: id });
       })
 
-      WB.API.on("cardSelect", ({ id, x, y, width, height }) => {
+      whiteboard.API.on("cardSelect", ({ id, x, y, width, height }) => {
         // WB.API.cardSelect(x, y, width, height);
         setRenderer({ id, x, y, width, height });
       })
 
-      WB.API.on("cardLeave", ({ id }) => {
+      whiteboard.API.on("cardLeave", ({ id }) => {
         // WB.API.cardLeave(id);
         setRenderer({ id });
       })
     }
 
-  }, [WB]);
+  }, [whiteboard]);
 
   return renderer;
 };

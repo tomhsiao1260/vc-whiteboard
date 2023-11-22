@@ -2,12 +2,12 @@ import { useEffect, useState } from "react";
 import Application from "../core/Application";
 
 export default () => {
-  const [WB, setWB] = useState(null);
+  const [whiteboard, setWhiteboard] = useState(null);
   useEffect(() => {
-    const WB = new Application({
+    const whiteboard = new Application({
       $canvas: document.querySelector(".webgl"),
     });
-    setWB(WB);
+    setWhiteboard(whiteboard);
   }, []);
-  return WB;
+  return whiteboard;
 };

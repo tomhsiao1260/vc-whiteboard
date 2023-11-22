@@ -15,23 +15,33 @@ import useCardList from './hooks/useCardList';
 import Card from './components/Card/Card';
 import useCardRender from './hooks/useCardRender';
 import FileSystem from "./components/FileSystem/FileSystem";
-
+import useUrlCardList from "./hooks/useUrlCardList";
+import useRightClick from "./hooks/useRightClick";
+import UrlCardMenu from "./components/UrlCardMenu/UrlCardMenu";
 
 export default function App() {
 
-    const WB = useVolumeViewer();
-    const cardList = useCardList(WB);
-    const renderer = useCardRender(WB);
+    // 白板本身
+    const whiteboard = useVolumeViewer();
+    // 版本狀態 (即時更新)
+    const renderer = useCardRender(whiteboard);
+
+    // 卡片列表
+    const cardList = useCardList(whiteboard);
+    const urlCardList = useUrlCardList(whiteboard)
 
     // useEffect(() => {
-        // PubSub.subscribe("onFileSelect", (eventName, fileObj) => {
-        //     console.log(eventName, fileObj)
-        // })
+    // PubSub.subscribe("onFileSelect", (eventName, fileObj) => {
+    //     console.log(eventName, fileObj)
+    // })
     // }, [])
+
+    const { clicked, position } = useRightClick()
+
 
     return (
         <AppContext.Provider value={{
-            WB
+            whiteboard
         }}>
             <div className="relative">
                 <Info />
@@ -52,9 +62,12 @@ export default function App() {
                 </Hint>
                 {/*<About />*/}
                 <Social />
+                {/* Card */}
                 {cardList.map((card) =>
                     <Card key={card.id} options={{ card, renderer }} />
                 )}
+                {/* Card (url) */}
+                {clicked && <UrlCardMenu position={position} />}
                 <canvas className='webgl'></canvas>
             </div>
         </AppContext.Provider>
