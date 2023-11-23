@@ -126,7 +126,17 @@ export default class World {
     })
 
     PubSub.subscribe("onWhiteboardUpdate", (eventName, config) => {
-      console.log(config)
+      console.log(config.cards)
+
+      // id              uuid
+      // name            卡片名稱
+      // type            'card' 或 'iframe'
+      // width           卡片寬度 (in 3.js)
+      // height          卡片高度 (in 3.js)
+      // position        卡片中心位置 (in 3.js)
+      // widthScreen     卡片寬度 (螢幕像素)
+      // heightScreen    卡片高度 (螢幕像素)
+      // positionScreen  卡片中心位置 (螢幕像素)
     })
 
     // generate a card when clicking
