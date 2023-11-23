@@ -125,20 +125,6 @@ export default class World {
       this.time.trigger("tick")
     })
 
-    PubSub.subscribe("onWhiteboardUpdate", (eventName, config) => {
-      console.log(config.cards)
-
-      // id              uuid
-      // name            卡片名稱
-      // type            'card' 或 'iframe'
-      // width           卡片寬度 (in 3.js)
-      // height          卡片高度 (in 3.js)
-      // position        卡片中心位置 (in 3.js)
-      // widthScreen     卡片寬度 (螢幕像素)
-      // heightScreen    卡片高度 (螢幕像素)
-      // positionScreen  卡片中心位置 (螢幕像素)
-    })
-
     // generate a card when clicking
     this.time.on("mouseDown", () => {
       let name;
@@ -246,6 +232,7 @@ export default class World {
 
       this.cardSet.list.forEach((card) => {
         const { dom } = card.userData;
+        if (!dom) return
         dom.style.display = "none";
       });
     });
@@ -273,13 +260,14 @@ export default class World {
 
       this.cardSet.list.forEach((c) => {
         const v = c.userData.viewer;
-        v.controls.enabled = false;
+        if (v) v.controls.enabled = false;
       });
-      viewer.controls.enabled = true;
+      if (viewer) viewer.controls.enabled = true;
 
       const [pbl, ptr] = this.cardSet.updateCanvas(card);
       const { width, height } = this.sizes.viewport;
 
+      if (!dom) return
       dom.style.left = `${(pbl.x + 1) * width * 0.5}px`;
       dom.style.bottom = `${(pbl.y + 1) * height * 0.5}px`;
       dom.style.width = `${(ptr.x - pbl.x) * width * 0.5}px`;
