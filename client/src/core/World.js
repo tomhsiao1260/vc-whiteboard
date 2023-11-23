@@ -84,9 +84,28 @@ export default class World {
       this.cardSet.list.forEach((card) => {
         const cardInfo = {}
 
-        cardInfo.segmentID = card.userData.segmentID
-        cardInfo.x = card.userData.center.x.toFixed(5)
-        cardInfo.y = card.userData.center.y.toFixed(5)
+        const position = {}
+        position.x = parseFloat(card.userData.center.x.toFixed(5))
+        position.y = parseFloat(card.userData.center.y.toFixed(5))
+        position.z = parseFloat(card.userData.center.z.toFixed(5))
+
+        const { w, h } = card.userData;
+        const center = card.position.clone()
+        const info = this.getScreenPosition(center, w, h)
+
+        const positionScreen = {}
+        positionScreen.x = parseInt(info.x)
+        positionScreen.y = parseInt(info.y)
+
+        cardInfo.id = card.userData.id
+        cardInfo.name = card.userData.name
+        cardInfo.type = card.userData.type
+        cardInfo.position = position
+        cardInfo.positionScreen = positionScreen
+        cardInfo.width = parseFloat(card.userData.w.toFixed(5))
+        cardInfo.height = parseFloat(card.userData.h.toFixed(5))
+        cardInfo.widthScreen = parseInt(info.width)
+        cardInfo.heightScreen = parseInt(info.height)
 
         cardSetInfo.push(cardInfo)
       })
@@ -95,17 +114,29 @@ export default class World {
       config.camera = cameraInfo
       config.cards = cardSetInfo
 
-      PubSub.publish("onConfigUpdate", config)
+      PubSub.publish("onWhiteboardUpdate", config)
+    })
+
+    PubSub.subscribe("onUrlCardGenerated", (eventName, { id, x, y, width, height }) => {
+      const scenePos = this.getScenePosition(x, y, width, height)
+      const card = this.cardSet.createIframe(id, scenePos.center, scenePos.width, scenePos.height)
+      card.visible = false
+      this.container.add(card)
+      this.time.trigger("tick")
+    })
+
+    PubSub.subscribe("onWhiteboardUpdate", (eventName, config) => {
+      console.log(config)
     })
 
     // generate a card when clicking
     this.time.on("mouseDown", () => {
-      let segmentID;
-      if (this.controls.numKeyPress[0]) segmentID = "20230522181603";
-      if (this.controls.numKeyPress[1]) segmentID = "20230509182749";
-      if (this.controls.numKeyPress[2]) segmentID = "20230702185752";
-      if (this.controls.numKeyPress[3]) segmentID = " ";
-      if (!segmentID) return;
+      let name;
+      if (this.controls.numKeyPress[0]) name = "20230522181603";
+      if (this.controls.numKeyPress[1]) name = "20230509182749";
+      if (this.controls.numKeyPress[2]) name = "20230702185752";
+      if (this.controls.numKeyPress[3]) name = " ";
+      if (!name) return;
 
       const intersects = this.controls.getRayCast([this.whiteBoard.container]);
       if (!intersects.length) return;
@@ -113,15 +144,18 @@ export default class World {
       const pos = intersects[0].point;
       const center = new THREE.Vector3(pos.x, pos.y, 0);
       const dom = this.setDOM();
-      const card = this.cardSet.create(segmentID, dom, this.controls.mouse, center);
+      const card = this.cardSet.create(name, dom, this.controls.mouse, center);
       this.container.add(card);
 
       this.time.trigger("tick");
 
       // this api is the bridge from Whiteboard Engine to React App.
-      const { id, x, y, width, height } = this.getScreenPosition(card);
-      this.app.API.cardGenerate({ segmentID, id, x, y, width, height });
-      this.app.API.cardInit({ segmentID, id, x, y, width, height });
+      const id = card.uuid;
+      const { w, h } = card.userData;
+      const c = card.position.clone();
+      const { x, y, width, height } = this.getScreenPosition(c, w, h);
+      this.app.API.cardGenerate({ id, name, x, y, width, height });
+      this.app.API.cardInit({ id, name, x, y, width, height });
     });
 
     // mouse pointer
@@ -161,6 +195,8 @@ export default class World {
       this.cardSet.targetCard.userData.center = pos;
 
       const { dom } = this.cardSet.targetCard.userData;
+      if (!dom) return
+
       const [pbl, ptr] = this.cardSet.updateCanvas(this.cardSet.targetCard);
       const { width, height } = this.sizes.viewport;
 
@@ -170,7 +206,10 @@ export default class World {
       dom.style.height = `${(ptr.y - pbl.y) * height * 0.5}px`;
       dom.style.display = "none";
 
-      const info = this.getScreenPosition(this.cardSet.targetCard);
+      const { w, h } = this.cardSet.targetCard.userData;
+      const center = this.cardSet.targetCard.position.clone();
+      const info = this.getScreenPosition(center, w, h);
+      info.id = this.cardSet.targetCard.uuid;
       this.app.API.cardMove(info);
 
       this.time.trigger("tick");
@@ -180,6 +219,8 @@ export default class World {
       if (!this.cardSet.targetCard) return;
 
       const { dom } = this.cardSet.targetCard.userData;
+      if (!dom) return;
+
       dom.style.display = "none";
       this.cardSet.targetCard = null;
     });
@@ -212,7 +253,10 @@ export default class World {
       const { dom, viewer, w, h } = card.userData;
 
       if (!this.cardSet.targetCard || (this.cardSet.targetCard && this.cardSet.targetCard.uuid !== card.uuid)) {
-        const info = this.getScreenPosition(card);
+        const u = card.userData;
+        const center = card.position.clone();
+        const info = this.getScreenPosition(center, u.w, u.h);
+        info.id = card.uuid;
         this.app.API.cardSelect(info);
       }
       this.cardSet.targetCard = card;
@@ -234,20 +278,41 @@ export default class World {
     });
   }
 
-  getScreenPosition(card) {
-    const { w, h } = card.userData;
-    const center = card.position.clone();
+  getScreenPosition(center, w, h) {
     const corner = new THREE.Vector3(center.x + w / 2, center.y + h / 2, center.z);
     center.project(this.camera.instance);
     corner.project(this.camera.instance);
 
-    const id = card.uuid;
     const x = this.sizes.width * (1 + center.x) / 2;
     const y = this.sizes.height * (1 - center.y) / 2;
-    const width = this.sizes.width * Math.abs(corner.x - center.x) / 2;
-    const height = this.sizes.height * Math.abs(corner.y - center.y) / 2;
+    const wScreen = this.sizes.width * Math.abs(corner.x - center.x);
+    const hScreen = this.sizes.height * Math.abs(corner.y - center.y);
 
-    return { id, x, y, width, height }
+    return { x, y, width: wScreen, height: hScreen }
+  }
+
+  getScenePosition(x, y, w, h) {
+    const mc = new THREE.Vector2()
+    mc.x = x / this.sizes.width * 2 - 1
+    mc.y = -(y / this.sizes.height) * 2 + 1
+
+    const me = new THREE.Vector2()
+    me.x = (x + w / 2) / this.sizes.width * 2 - 1
+    me.y = -((y + h / 2) / this.sizes.height) * 2 + 1
+
+    const raycaster = new THREE.Raycaster()
+    raycaster.setFromCamera(mc, this.camera.instance)
+    const intersectsC = raycaster.intersectObjects([ this.whiteBoard.container ])
+    raycaster.setFromCamera(me, this.camera.instance)
+    const intersectsE = raycaster.intersectObjects([ this.whiteBoard.container ])
+    if (!intersectsC.length || !intersectsE.length) return
+
+    const center = intersectsC[0].point
+    const corner = intersectsE[0].point
+    const wScene = 2 * Math.abs(corner.x - center.x)
+    const hScene = 2 * Math.abs(corner.y - center.y)
+
+    return { center, width: wScene, height: hScene }
   }
 
   setDOM() {

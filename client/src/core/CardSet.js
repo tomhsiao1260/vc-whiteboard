@@ -15,15 +15,15 @@ export default class CardSet {
     this.targetCard = null
   }
 
-  create(segmentID, dom, mouse, center) {
+  create(name, dom, mouse, center) {
     const info = {}
-    if (segmentID === '20230522181603') { info.w = 2912; info.h = 1060; }
-    if (segmentID === '20230509182749') { info.w = 3278; info.h = 1090; }
-    if (segmentID === '20230702185752') { info.w = 1746; info.h = 1726; }
-    if (segmentID === ' ') { info.w = 1190 * 3; info.h = 1018 * 3; }
+    if (name === '20230522181603') { info.w = 2912; info.h = 1060; }
+    if (name === '20230509182749') { info.w = 3278; info.h = 1090; }
+    if (name === '20230702185752') { info.w = 1746; info.h = 1726; }
+    if (name === ' ') { info.w = 1190 * 3; info.h = 1018 * 3; }
 
     let viewer
-    if (segmentID === ' ') {
+    if (name === ' ') {
       viewer = new Hint({
         info,
         canvas: dom,
@@ -46,18 +46,35 @@ export default class CardSet {
       this.time.trigger('tick')
     })
 
-    const w = (info.w / 1500).toFixed(2)
-    const h = (info.h / 1500).toFixed(2)
+    const w = parseFloat((info.w / 1500).toFixed(2))
+    const h = parseFloat((info.h / 1500).toFixed(2))
 
     const geometry = new THREE.PlaneGeometry(w, h)
     const material = new CopyShader()
     material.uniforms.tDiffuse.value = viewer.buffer.texture
 
     const card = new THREE.Mesh(geometry, material)
+    const id = card.uuid
+    const type = 'card'
     card.position.copy(center)
-    card.userData = { center, segmentID, viewer, dom, w, h }
+    card.userData = { id, name, type, center, w, h, viewer, dom }
 
-    viewer.create(segmentID, card.uuid, info)
+    viewer.create(name, id, info)
+    this.list.push(card)
+
+    return card
+  }
+
+  createIframe(id, center, width, height) {
+    const geometry = new THREE.PlaneGeometry(width, height)
+    const material = new THREE.MeshBasicMaterial()
+
+    const name = ''
+    const type = 'iframe'
+
+    const card = new THREE.Mesh(geometry, material)
+    card.position.copy(center)
+    card.userData = { id, name, type, center, w: width, h: height, viewer: null, dom: null }
     this.list.push(card)
 
     return card
