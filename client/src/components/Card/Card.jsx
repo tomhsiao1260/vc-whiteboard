@@ -1,6 +1,6 @@
 import React, { useContext, useState } from "react";
 import AppContext from "../../context/AppContext";
-import useCardRender from "../../hooks/useCardRender";
+import useCardRender from "../../hooks/need-refactor/useCardRender";
 import { css } from "@emotion/css";
 import { cn } from "../../utils/cn";
 
@@ -10,8 +10,6 @@ export default function Card(props) {
     const renderer = props.options.renderer;
     const rendererId = renderer?.id;
     const id = card?.id;
-
-    // console.log(renderer)
 
     const [cardLoad, setCardLoad] = useState(false);
     const [cardSelected, setCardSelected] = useState(false);
@@ -34,8 +32,8 @@ export default function Card(props) {
                 css`
             top: ${renderer?.y}px;
             left: ${renderer?.x}px;
-            width: ${renderer?.width * 2}px;
-            height: ${renderer?.height * 2}px;
+            width: ${renderer?.width}px;
+            height: ${renderer?.height}px;
           `
             )}
         >
@@ -54,13 +52,13 @@ export default function Card(props) {
                     css` 
                         top: ${renderer?.y}px;
                         left: ${renderer?.x}px;
-                        width: ${renderer?.width * 2}px;
-                        height: ${renderer?.height * 2}px;
+                        width: ${renderer?.width}px;
+                        height: ${renderer?.height}px;
                         `,
                 )}
             >
                 <h6 className="translate-y-[-20px] text-gray-200">
-                    {card?.segmentID}
+                    {card?.name}
                 </h6>
             </div>
         );

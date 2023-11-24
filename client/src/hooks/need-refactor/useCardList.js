@@ -2,17 +2,17 @@ import { useEffect, useState } from "react";
 
 // generate cards, and return card list that react app need.
 
-export default (whiteboard) => {
+export default (app) => {
   const [cardList, setCardList] = useState([]);
 
   useEffect(() => {
-    if (whiteboard) {
+    if (app) {
       // when card generate
-      whiteboard.API.on("cardGenerate", (data) => {
+      app.API.on("cardGenerate", (data) => {
         setCardList([data, ...cardList]);
       });
     }
-  }, [whiteboard, cardList]);
+  }, [app, cardList]);
 
   useEffect(() => {
     // console.log(cardList);

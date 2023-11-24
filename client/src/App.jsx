@@ -5,51 +5,33 @@
  * * It will load when the App component is mounted.
  * * 
  */
-import useVolumeViewer from './hooks/useVolumeViewer';
 import Info from './components/Info/Info';
 import Hint from './components/Hint/Hint';
 import Social from './components/Social/Social';
-
 import AppContext from './context/AppContext';
-import useCardList from './hooks/useCardList';
+import useCardList from './hooks/need-refactor/useCardList';
 import Card from './components/Card/Card';
-import useCardRender from './hooks/useCardRender';
+import useCardRender from './hooks/need-refactor/useCardRender';
 import FileSystem from "./components/FileSystem/FileSystem";
-import useUrlCardList from "./hooks/useUrlCardList";
-import useRightClick from "./hooks/useRightClick";
-import UrlCardMenu from "./components/UrlCard/UrlCard.jsx";
-import UrlCard from "./components/UrlCard/UrlCard.jsx";
-import { useEffect } from "react";
-import PubSub from "pubsub-js";
-import { nanoid } from "nanoid";
+import useWhiteboardUpdate from "./hooks/useWhiteboardUpdate";
+import useWhiteboardApp from "./hooks/useWhiteboardApp";
+import UrlCards from "./components/UrlCards/UrlCards";
 
 export default function App() {
 
     // 白板本身
-    const whiteboard = useVolumeViewer();
-    // 版本狀態 (即時更新)
-    const renderer = useCardRender(whiteboard);
+    const app = useWhiteboardApp();
+    // 白板狀態
+    const whiteboard = useWhiteboardUpdate();
 
-    // 卡片列表
-    const cardList = useCardList(whiteboard);
-    const urlCardList = useUrlCardList(whiteboard)
+    // 白板控制 (舊, 會重構)
+    const renderer = useCardRender(app);
+    const cardList = useCardList(app);
 
-    // useEffect(() => {
-    // PubSub.subscribe("onFileSelect", (eventName, fileObj) => {
-    //     console.log(eventName, fileObj)
-    // })
-    // }, [])
-
-    const { clicked, position } = useRightClick()
-
-    useEffect(() => {
-        if (clicked) {
-            PubSub.publish("onUrlCardGenerated", { id: nanoid(), x: position[0], y: position[1], width: 40, height: 80 })
-        }
-    }, [clicked, position])
 
     return (
         <AppContext.Provider value={{
+            app,
             whiteboard
         }}>
             <div className="relative">
@@ -75,10 +57,7 @@ export default function App() {
                 {cardList.map((card) =>
                     <Card key={card.id} options={{ card, renderer }} />
                 )}
-                {/* Card (url) */}
-                {/* {urlCardList.map((card) =>
-                    <UrlCard key={card.id} options={{ card, renderer }} />
-                )} */}
+                <UrlCards />
                 <canvas className='webgl'></canvas>
             </div>
         </AppContext.Provider>

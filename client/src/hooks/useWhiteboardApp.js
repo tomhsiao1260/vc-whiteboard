@@ -1,13 +1,16 @@
 import { useEffect, useState } from "react";
 import Application from "../core/Application";
 
-export default () => {
-  const [whiteboard, setWhiteboard] = useState(null);
+const useWhiteboardApp = () => {
+  const [app, setApp] = useState(null);
   useEffect(() => {
-    const whiteboard = new Application({
+    const app = new Application({
       $canvas: document.querySelector(".webgl"),
     });
-    setWhiteboard(whiteboard);
+    setApp(app);
   }, []);
-  return whiteboard;
+  return app;
 };
+
+
+export default useWhiteboardApp
