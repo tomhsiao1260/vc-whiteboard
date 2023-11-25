@@ -34,17 +34,21 @@ export default function App() {
         }}>
             <div className="relative">
                 <Info />
-                <FileSystem />
+                {/* <FileSystem /> */}
                 <Hint>
                     <Hint.HotKey hotkey={["num", "LEFT"]}>
-                        {"<To generate Card>"}
+                        {"<Generate Card>"}
+                    </Hint.HotKey>
+                    <Hint.HotKey hotkey={["RIGHT"]}>
+                        {"<Generate Embedded Card>"}
                     </Hint.HotKey>
                     <Hint.HotKey hotkey={["DRAG"]}>
-                        {"<To move Whiteboard>"}
+                        {"<Move Whiteboard>"}
                     </Hint.HotKey>
                     <Hint.HotKey hotkey={["SPACE", "DRAG"]}>
-                        {"<To update scene in Card>"}
+                        {"<Update Scene in Card>"}
                     </Hint.HotKey>
+
                     {/* <Hint.HotKey hotkey={["ALT", "/"]}>
                         {"<Open HotKey Pannel>"}
                     </Hint.HotKey> */}

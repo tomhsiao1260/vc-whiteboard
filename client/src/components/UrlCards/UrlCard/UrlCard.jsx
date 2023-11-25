@@ -44,6 +44,8 @@ export default function UrlCard({ card }) {
                 className={cn("w-full", "text-lg text-[#111]", "p-1")}
                 type="text" />
         </div>
-        <iframe className="w-full aspect-video" src={url} frameBorder="0"></iframe>
+        <iframe
+            style={{ width: card.widthScreen - 12, height: card.heightScreen - 84 }}
+            className="aspect-video bg-white" src={url} frameBorder="0"></iframe>
     </div>
 }

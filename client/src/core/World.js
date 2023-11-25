@@ -81,7 +81,7 @@ export default class World {
     PubSub.subscribe("onUrlCardGenerated", (eventName, { id, x, y, width, height }) => {
       const scenePos = this.getScenePosition(x, y, width, height)
       const card = this.cardSet.createIframe(id, scenePos.center, scenePos.width, scenePos.height)
-      // card.visible = false
+      card.visible = false
       this.container.add(card)
       this.time.trigger("tick")
     })
