@@ -28,7 +28,7 @@ export default function UrlCard({ card }) {
    
         `))}>
         <div className="bg-[#111]">
-            <div className="flex justify-between px-2 text-lg">
+            <div className="flex justify-between px-2 text-lg cursor-pointer">
                 <p>From the web</p>
                 <div onClick={handleClose}>[X]</div>
             </div>
@@ -44,6 +44,6 @@ export default function UrlCard({ card }) {
                 className={cn("w-full", "text-lg text-[#111]", "p-1")}
                 type="text" />
         </div>
-        <iframe className="w-full aspect-video" src={url} frameborder="0"></iframe>
+        <iframe className="w-full aspect-video" src={url} frameBorder="0"></iframe>
     </div>
 }

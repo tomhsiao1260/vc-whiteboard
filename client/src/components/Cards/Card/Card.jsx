@@ -17,8 +17,6 @@ export default function Card({ card }) {
         })
     }, [])
 
-    console.log(card)
-
     return <div
         ref={hover}
         className={cn(
