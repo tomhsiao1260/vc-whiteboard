@@ -86,6 +86,19 @@ export default class World {
       this.time.trigger("tick")
     })
 
+    // delete the card
+    PubSub.subscribe("onUrlCardDelete", (evnetName, { id }) => {
+      const index = this.cardSet.list.findIndex(card => card.userData.id === id)
+      const card = this.cardSet.list[index]
+
+      card.geometry.dispose()
+      card.material.dispose()
+      this.container.remove(card)
+
+      this.cardSet.list.splice(index, 1)
+      this.time.trigger("tick")
+    })
+
     // generate a card when clicking
     this.time.on("mouseDown", () => {
       let name;
@@ -111,8 +124,8 @@ export default class World {
       const { w, h } = card.userData;
       const c = card.position.clone();
       const { x, y, width, height } = this.getScreenPosition(c, w, h);
-      this.app.API.cardGenerate({ id, name, x, y, width, height });
-      this.app.API.cardInit({ id, name, x, y, width, height });
+      // this.app.API.cardGenerate({ id, name, x, y, width, height });
+      // this.app.API.cardInit({ id, name, x, y, width, height });
     });
 
     // mouse pointer
@@ -167,7 +180,7 @@ export default class World {
       const center = this.cardSet.targetCard.position.clone();
       const info = this.getScreenPosition(center, w, h, '');
       info.id = this.cardSet.targetCard.uuid;
-      this.app.API.cardMove(info);
+      // this.app.API.cardMove(info);
 
       this.time.trigger("tick");
     });
@@ -185,7 +198,7 @@ export default class World {
     // make the whiteboard controllable (all scene in cards remains unchanged)
     this.time.on("spaceUp", () => {
       if (!this.cardSet.targetCard) return
-      this.app.API.cardLeave(!this.cardSet.targetCard.uuid)
+      // this.app.API.cardLeave(!this.cardSet.targetCard.uuid)
 
       document.body.style.cursor = "auto";
       this.camera.controls.enabled = true;
@@ -203,8 +216,8 @@ export default class World {
       this.camera.controls.enabled = false;
       const intersects = this.controls.getRayCast(this.cardSet.list);
 
-      if (!intersects.length && this.cardSet.targetCard) { this.app.API.cardLeave(this.cardSet.targetCard.uuid); }
-      if (intersects.length && this.cardSet.targetCard && this.cardSet.targetCard.uuid !== intersects[0].object.uuid) { this.app.API.cardLeave(this.cardSet.targetCard.uuid); }
+      // if (!intersects.length && this.cardSet.targetCard) { this.app.API.cardLeave(this.cardSet.targetCard.uuid); }
+      // if (intersects.length && this.cardSet.targetCard && this.cardSet.targetCard.uuid !== intersects[0].object.uuid) { this.app.API.cardLeave(this.cardSet.targetCard.uuid); }
       if (!intersects.length) { this.cardSet.targetCard = null; return; }
 
       const card = intersects[0].object;
@@ -215,7 +228,7 @@ export default class World {
         const center = card.position.clone();
         const info = this.getScreenPosition(center, u.w, u.h);
         info.id = card.uuid;
-        this.app.API.cardSelect(info);
+        // this.app.API.cardSelect(info);
       }
       this.cardSet.targetCard = card;
 
