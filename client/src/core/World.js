@@ -160,7 +160,6 @@ export default class World {
       if (!intersects.length) return;
 
       const { dom } = this.cardSet.targetCard.userData;
-      if (!dom) return
 
       this.mouseNowPos = intersects[0].point;
       const pos = this.cardDownPos.clone().add(this.mouseNowPos).sub(this.mouseDownPos);
@@ -170,11 +169,13 @@ export default class World {
       const [pbl, ptr] = this.cardSet.updateCanvas(this.cardSet.targetCard);
       const { width, height } = this.sizes.viewport;
 
-      dom.style.left = `${(pbl.x + 1) * width * 0.5}px`;
-      dom.style.bottom = `${(pbl.y + 1) * height * 0.5}px`;
-      dom.style.width = `${(ptr.x - pbl.x) * width * 0.5}px`;
-      dom.style.height = `${(ptr.y - pbl.y) * height * 0.5}px`;
-      dom.style.display = "none";
+      if (dom) {
+        dom.style.left = `${(pbl.x + 1) * width * 0.5}px`;
+        dom.style.bottom = `${(pbl.y + 1) * height * 0.5}px`;
+        dom.style.width = `${(ptr.x - pbl.x) * width * 0.5}px`;
+        dom.style.height = `${(ptr.y - pbl.y) * height * 0.5}px`;
+        dom.style.display = "none";
+      }
 
       const { w, h } = this.cardSet.targetCard.userData;
       const center = this.cardSet.targetCard.position.clone();
