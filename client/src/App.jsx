@@ -15,6 +15,7 @@ import useWhiteboardApp from "./hooks/useWhiteboardApp";
 import UrlCards from "./components/UrlCards/UrlCards";
 import Cards from "./components/Cards/Cards";
 import useCardRender from "./hooks/deprecated/useCardRender";
+import Version from './components/Version/Version';
 
 export default function App() {
 
@@ -48,13 +49,13 @@ export default function App() {
                     <Hint.HotKey hotkey={["SPACE", "DRAG"]}>
                         {"<Update Scene in Card>"}
                     </Hint.HotKey>
-
                     {/* <Hint.HotKey hotkey={["ALT", "/"]}>
                         {"<Open HotKey Pannel>"}
                     </Hint.HotKey> */}
                 </Hint>
                 {/*<About />*/}
                 <Social />
+                <Version />
                 <Cards />
                 <UrlCards />
                 <canvas className='webgl'></canvas>
