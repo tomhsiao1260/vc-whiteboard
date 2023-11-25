@@ -8,7 +8,7 @@ const useGenerateUrlCard = () => {
 
     useEffect(() => {
         if (clicked) {
-            PubSub.publish("onUrlCardGenerated", { id: nanoid(), x: position[0], y: position[1], width: 800 ,height: 450})
+            PubSub.publish("onUrlCardGenerated", { id: nanoid(), x: position[0], y: position[1], width: 800 ,height: 900})
         }
     }, [clicked, position])
 
