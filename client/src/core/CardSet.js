@@ -1,6 +1,7 @@
 import * as THREE from 'three'
 import Card from './core/Card'
 import Hint from './core/Hint'
+import PubSub from "pubsub-js";
 import { CopyShader } from './core/CopyShader'
 
 export default class CardSet {
@@ -76,6 +77,8 @@ export default class CardSet {
     card.position.copy(center)
     card.userData = { id, name, type, center, w: width, h: height, viewer: null, dom: null }
     this.list.push(card)
+
+    PubSub.publish("onFinishLoad", { id })
 
     return card
   }

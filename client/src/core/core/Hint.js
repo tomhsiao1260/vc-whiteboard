@@ -1,4 +1,5 @@
 import * as THREE from 'three'
+import PubSub from "pubsub-js";
 import { TextureLoader } from 'three'
 import { HintShader } from './HintShader'
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls'
@@ -44,6 +45,8 @@ export default class Hint {
     this.render()
     this.time.trigger('tick')
     this.app.API.cardLoad(uuid)
+
+    PubSub.publish("onFinishLoad", { id: uuid })
   }
 
   render() {

@@ -1,4 +1,5 @@
 import * as THREE from 'three'
+import PubSub from "pubsub-js";
 import { TextureLoader } from 'three'
 import { FragmentShader } from './FragmentShader'
 import { TIFFLoader } from 'three/addons/loaders/TIFFLoader.js'
@@ -56,6 +57,8 @@ export default class Card {
     this.render()
     this.time.trigger('tick')
     this.app.API.cardLoad(uuid)
+
+    PubSub.publish("onFinishLoad", { id: uuid })
   }
 
   render() {
