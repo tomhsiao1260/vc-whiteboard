@@ -1,19 +1,30 @@
-import { useCallback, useContext, useEffect, useState } from "react"
+import { useCallback, useContext, useEffect, useRef, useState } from "react"
 import { cn } from "../../../utils/cn"
 import { css } from "@emotion/css"
 import AppContext from "../../../context/AppContext";
 import { filter } from "lodash";
 
 export default function UrlCard({ card }) {
-    const { whiteboard } = useContext(AppContext)
+
+    const inputRef = useRef(null)
 
     const [inupt, setInput] = useState("");
     const [url, setUrl] = useState("");
 
+    const handleClose = () => {
+        // const newCards = filter(whiteboard.cards, (c) => c.id !== card.id)
+        // whiteboard.cards = newCards
+        // PubSub.publish("onWhiteboardUpdate", { whiteboard })
+    }
+
+    useEffect(() => {
+        inputRef.current.focus()
+    }, [])
+
     return <div className={cn(
-        "fixed", "flex flex-col gap-2 p-2", css(`
+        "fixed translate-x-[-50%]", "flex flex-col gap-2 p-2", css(`
             top: ${card.positionScreen.y}px;
-            left: ${card.positionScreen.x - card.widthScreen / 2}px;
+            left: ${card.positionScreen.x}px;
             width: ${card.widthScreen}px;
             height:${card.heightScreen}px;
    
@@ -21,9 +32,10 @@ export default function UrlCard({ card }) {
         <div className="bg-[#111]">
             <div className="flex justify-between px-2 text-lg">
                 <p>From the web</p>
-                <div onClick={() => { }}>[X]</div>
+                <div onClick={handleClose}>[X]</div>
             </div>
             <input
+                ref={inputRef}
                 value={inupt}
                 onChange={(e) => { setInput(e.target.value) }}
                 onKeyDown={(e) => {

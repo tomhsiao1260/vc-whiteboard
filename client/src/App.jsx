@@ -16,6 +16,7 @@ import FileSystem from "./components/FileSystem/FileSystem";
 import useWhiteboardUpdate from "./hooks/useWhiteboardUpdate";
 import useWhiteboardApp from "./hooks/useWhiteboardApp";
 import UrlCards from "./components/UrlCards/UrlCards";
+import Cards from "./components/Cards/Cards";
 
 export default function App() {
 
@@ -54,9 +55,10 @@ export default function App() {
                 {/*<About />*/}
                 <Social />
                 {/* Card */}
-                {cardList.map((card) =>
+                {/* {cardList.map((card) =>
                     <Card key={card.id} options={{ card, renderer }} />
-                )}
+                )} */}
+                <Cards />
                 <UrlCards />
                 <canvas className='webgl'></canvas>
             </div>

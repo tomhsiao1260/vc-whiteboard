@@ -25,6 +25,8 @@ export default function Card(props) {
         setCardSelected(false)
     }
 
+    console.log(renderer)
+
     if (!cardLoad) {
         return <div
             className={cn(
@@ -50,10 +52,10 @@ export default function Card(props) {
                     styles.card,
                     "border-gray-200 border-2",
                     css` 
-                        top: ${renderer?.y}px;
-                        left: ${renderer?.x}px;
-                        width: ${renderer?.width}px;
-                        height: ${renderer?.height}px;
+                        top: ${renderer?.y || -10}px;
+                        left: ${renderer?.x || -10}px;
+                        width: ${renderer?.width || 0}px;
+                        height: ${renderer?.height || 0}px;
                         `,
                 )}
             >

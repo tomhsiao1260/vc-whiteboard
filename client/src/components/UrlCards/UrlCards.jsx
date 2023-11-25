@@ -13,9 +13,7 @@ export default function UrlCards() {
     const { whiteboard } = useContext(AppContext)
     const urlCards = whiteboard ? filter(whiteboard.cards, (card) => card.type === "iframe") : null
 
-    console.log(urlCards)
-
     return (
-        map(urlCards, card => <UrlCard card={card} />)
+        map(urlCards, card => <UrlCard key={card.id} card={card} />)
     )
 }
