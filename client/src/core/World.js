@@ -74,53 +74,14 @@ export default class World {
       renderer: this.renderer,
     });
 
-    this.time.on('tick', () => {
-      const cameraInfo = {}
-      cameraInfo.x = this.camera.instance.position.x.toFixed(5)
-      cameraInfo.y = this.camera.instance.position.y.toFixed(5)
-      cameraInfo.z = this.camera.instance.position.z.toFixed(5)
-
-      const cardSetInfo = []
-      this.cardSet.list.forEach((card) => {
-        const cardInfo = {}
-
-        const position = {}
-        position.x = parseFloat(card.userData.center.x.toFixed(5))
-        position.y = parseFloat(card.userData.center.y.toFixed(5))
-        position.z = parseFloat(card.userData.center.z.toFixed(5))
-
-        const { w, h } = card.userData;
-        const center = card.position.clone()
-        const info = this.getScreenPosition(center, w, h)
-
-        const positionScreen = {}
-        positionScreen.x = parseInt(info.x)
-        positionScreen.y = parseInt(info.y)
-
-        cardInfo.id = card.userData.id
-        cardInfo.name = card.userData.name
-        cardInfo.type = card.userData.type
-        cardInfo.position = position
-        cardInfo.positionScreen = positionScreen
-        cardInfo.width = parseFloat(card.userData.w.toFixed(5))
-        cardInfo.height = parseFloat(card.userData.h.toFixed(5))
-        cardInfo.widthScreen = parseInt(info.width)
-        cardInfo.heightScreen = parseInt(info.height)
-
-        cardSetInfo.push(cardInfo)
-      })
-
-      const config = {}
-      config.camera = cameraInfo
-      config.cards = cardSetInfo
-
-      PubSub.publish("onWhiteboardUpdate", config)
-    })
+    // update whiteboard config info
+    this.time.on('tick', () => { PubSub.publish("onWhiteboardUpdate", this.getConfig()) })
+    this.sizes.on("resize", () => { PubSub.publish("onWhiteboardUpdate", this.getConfig()) });
 
     PubSub.subscribe("onUrlCardGenerated", (eventName, { id, x, y, width, height }) => {
       const scenePos = this.getScenePosition(x, y, width, height)
       const card = this.cardSet.createIframe(id, scenePos.center, scenePos.width, scenePos.height)
-      card.visible = false
+      // card.visible = false
       this.container.add(card)
       this.time.trigger("tick")
     })
@@ -155,13 +116,13 @@ export default class World {
     });
 
     // mouse pointer
-    this.time.on('mouseMove', () => {
-      document.body.style.cursor = 'auto';
+    // this.time.on('mouseMove', () => {
+    //   document.body.style.cursor = 'auto';
 
-      const intersects = this.controls.getRayCast(this.cardSet.list);
-      if (!intersects.length) return;
-      document.body.style.cursor = 'pointer';
-    });
+    //   const intersects = this.controls.getRayCast(this.cardSet.list);
+    //   if (!intersects.length) return;
+    //   document.body.style.cursor = 'pointer';
+    // });
 
     // drag the card
     this.cardDonwPos = null
@@ -185,13 +146,13 @@ export default class World {
       const intersects = this.controls.getRayCast([this.whiteBoard.container]);
       if (!intersects.length) return;
 
+      const { dom } = this.cardSet.targetCard.userData;
+      if (!dom) return
+
       this.mouseNowPos = intersects[0].point;
       const pos = this.cardDownPos.clone().add(this.mouseNowPos).sub(this.mouseDownPos);
       this.cardSet.targetCard.position.copy(pos);
       this.cardSet.targetCard.userData.center = pos;
-
-      const { dom } = this.cardSet.targetCard.userData;
-      if (!dom) return
 
       const [pbl, ptr] = this.cardSet.updateCanvas(this.cardSet.targetCard);
       const { width, height } = this.sizes.viewport;
@@ -204,7 +165,7 @@ export default class World {
 
       const { w, h } = this.cardSet.targetCard.userData;
       const center = this.cardSet.targetCard.position.clone();
-      const info = this.getScreenPosition(center, w, h);
+      const info = this.getScreenPosition(center, w, h, '');
       info.id = this.cardSet.targetCard.uuid;
       this.app.API.cardMove(info);
 
@@ -274,6 +235,49 @@ export default class World {
       dom.style.height = `${(ptr.y - pbl.y) * height * 0.5}px`;
       dom.style.display = "inline";
     });
+  }
+
+  getConfig() {
+    const cameraInfo = {}
+    cameraInfo.x = this.camera.instance.position.x.toFixed(5)
+    cameraInfo.y = this.camera.instance.position.y.toFixed(5)
+    cameraInfo.z = this.camera.instance.position.z.toFixed(5)
+
+    const cardSetInfo = []
+    this.cardSet.list.forEach((card) => {
+      const cardInfo = {}
+
+      const position = {}
+      position.x = parseFloat(card.userData.center.x.toFixed(5))
+      position.y = parseFloat(card.userData.center.y.toFixed(5))
+      position.z = parseFloat(card.userData.center.z.toFixed(5))
+
+      const { w, h } = card.userData;
+      const center = card.position.clone()
+      const info = this.getScreenPosition(center, w, h)
+
+      const positionScreen = {}
+      positionScreen.x = parseInt(info.x)
+      positionScreen.y = parseInt(info.y)
+
+      cardInfo.id = card.userData.id
+      cardInfo.name = card.userData.name
+      cardInfo.type = card.userData.type
+      cardInfo.position = position
+      cardInfo.positionScreen = positionScreen
+      cardInfo.width = parseFloat(card.userData.w.toFixed(5))
+      cardInfo.height = parseFloat(card.userData.h.toFixed(5))
+      cardInfo.widthScreen = parseInt(info.width)
+      cardInfo.heightScreen = parseInt(info.height)
+
+      cardSetInfo.push(cardInfo)
+    })
+
+    const config = {}
+    config.camera = cameraInfo
+    config.cards = cardSetInfo
+
+    return config
   }
 
   getScreenPosition(center, w, h) {
