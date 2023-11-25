@@ -12,9 +12,7 @@ export default function UrlCard({ card }) {
     const [url, setUrl] = useState("");
 
     const handleClose = () => {
-        // const newCards = filter(whiteboard.cards, (c) => c.id !== card.id)
-        // whiteboard.cards = newCards
-        // PubSub.publish("onWhiteboardUpdate", { whiteboard })
+        PubSub.publish("onUrlCardDelete", { id: card.id })
     }
 
     useEffect(() => {

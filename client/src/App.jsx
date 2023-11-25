@@ -9,14 +9,12 @@ import Info from './components/Info/Info';
 import Hint from './components/Hint/Hint';
 import Social from './components/Social/Social';
 import AppContext from './context/AppContext';
-import useCardList from './hooks/need-refactor/useCardList';
-import Card from './components/Card/Card';
-import useCardRender from './hooks/need-refactor/useCardRender';
 import FileSystem from "./components/FileSystem/FileSystem";
 import useWhiteboardUpdate from "./hooks/useWhiteboardUpdate";
 import useWhiteboardApp from "./hooks/useWhiteboardApp";
 import UrlCards from "./components/UrlCards/UrlCards";
 import Cards from "./components/Cards/Cards";
+import useCardRender from "./hooks/deprecated/useCardRender";
 
 export default function App() {
 
@@ -26,8 +24,7 @@ export default function App() {
     const whiteboard = useWhiteboardUpdate();
 
     // 白板控制 (舊, 會重構)
-    const renderer = useCardRender(app);
-    const cardList = useCardList(app);
+    useCardRender(app);
 
 
     return (
@@ -54,10 +51,6 @@ export default function App() {
                 </Hint>
                 {/*<About />*/}
                 <Social />
-                {/* Card */}
-                {/* {cardList.map((card) =>
-                    <Card key={card.id} options={{ card, renderer }} />
-                )} */}
                 <Cards />
                 <UrlCards />
                 <canvas className='webgl'></canvas>

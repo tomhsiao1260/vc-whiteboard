@@ -1,8 +1,8 @@
 import React, { useContext, useState } from "react";
-import AppContext from "../../context/AppContext";
-import useCardRender from "../../hooks/need-refactor/useCardRender";
+import AppContext from "../../../context/AppContext";
+import useCardRender from "../../../hooks/need-refactor/useCardRender";
 import { css } from "@emotion/css";
-import { cn } from "../../utils/cn";
+import { cn } from "../../../utils/cn";
 
 export default function Card(props) {
 
