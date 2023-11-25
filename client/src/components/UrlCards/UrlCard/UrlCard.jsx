@@ -20,7 +20,7 @@ export default function UrlCard({ card }) {
     }, [])
 
     return <div className={cn(
-        "fixed translate-x-[-50%]", "flex flex-col gap-2 p-2", css(`
+        "fixed translate-x-[-50%] translate-y-[-50%]", "flex flex-col gap-2 p-2", css(`
             top: ${card.positionScreen.y}px;
             left: ${card.positionScreen.x}px;
             width: ${card.widthScreen}px;
