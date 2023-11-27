@@ -78,9 +78,10 @@ export default class World {
     this.time.on('tick', () => { PubSub.publish("onWhiteboardUpdate", this.getConfig()) })
     this.sizes.on("resize", () => { PubSub.publish("onWhiteboardUpdate", this.getConfig()) });
 
-    PubSub.subscribe("onUrlCardGenerated", (eventName, { id, x, y, width, height }) => {
-      const scenePos = this.getScenePosition(x, y, width, height)
-      const card = this.cardSet.createIframe(id, scenePos.center, scenePos.width, scenePos.height)
+    PubSub.subscribe("onUrlCardGenerated", (eventName, { id, x, y }) => {
+      // I don't use the last two params (random numbers)
+      const scenePos = this.getScenePosition(x, y, 100, 100)
+      const card = this.cardSet.createIframe(id, scenePos.center, 800/400, 525/400)
       card.visible = false
       this.container.add(card)
       this.time.trigger("tick")
@@ -253,9 +254,10 @@ export default class World {
 
   getConfig() {
     const cameraInfo = {}
-    cameraInfo.x = this.camera.instance.position.x.toFixed(5)
-    cameraInfo.y = this.camera.instance.position.y.toFixed(5)
-    cameraInfo.z = this.camera.instance.position.z.toFixed(5)
+    cameraInfo.x = parseFloat(this.camera.instance.position.x.toFixed(5))
+    cameraInfo.y = parseFloat(this.camera.instance.position.y.toFixed(5))
+    cameraInfo.z = parseFloat(this.camera.instance.position.z.toFixed(5))
+    cameraInfo.zoom = parseFloat(this.camera.instance.zoom.toFixed(3))
 
     const cardSetInfo = []
     this.cardSet.list.forEach((card) => {
