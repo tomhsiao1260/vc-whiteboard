@@ -19,6 +19,8 @@ export default function UrlCard({ card }) {
         inputRef.current.focus()
     }, [])
 
+    console.log(card)
+
     return <div className={cn(
         "fixed translate-x-[-50%] translate-y-[-50%]", "flex flex-col gap-2 p-2", css(`
             top: ${card.positionScreen.y}px;
@@ -27,12 +29,13 @@ export default function UrlCard({ card }) {
             height:${card.heightScreen}px;
    
         `))}>
-        <div className="bg-[#111]">
+        <div
+            className="bg-[#111] z-10">
             <div className="flex justify-between px-2 text-lg cursor-pointer">
                 <p>From the web</p>
                 <div onClick={handleClose}>[X]</div>
             </div>
-            <input
+            {card.heightScreen < 280 ? <></> : <input
                 ref={inputRef}
                 value={inupt}
                 onChange={(e) => { setInput(e.target.value) }}
@@ -42,7 +45,7 @@ export default function UrlCard({ card }) {
                     }
                 }}
                 className={cn("w-full", "text-lg text-[#111]", "p-1")}
-                type="text" />
+                type="text" />}
         </div>
         <iframe
             style={{ width: card.widthScreen - 16, height: card.heightScreen - 84 }}
