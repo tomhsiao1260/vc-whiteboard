@@ -31,10 +31,11 @@ export default function UrlCard({ card }) {
         `))}>
         <div
             className="bg-[#111] z-10">
-            <div className="flex justify-between px-2 text-lg cursor-pointer">
-                <p>From the web</p>
-                <div onClick={handleClose}>[X]</div>
-            </div>
+            {card.heightScreen < 150 ? <></> :
+                <div className="flex justify-between px-2 text-lg cursor-pointer">
+                    <p>From the web</p>
+                    <div onClick={handleClose}>[X]</div>
+                </div>}
             {card.heightScreen < 280 ? <></> : <input
                 ref={inputRef}
                 value={inupt}
