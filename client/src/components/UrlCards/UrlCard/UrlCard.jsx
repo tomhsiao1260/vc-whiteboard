@@ -49,7 +49,7 @@ export default function UrlCard({ card }) {
                 type="text" />}
         </div>
         <iframe
-            style={{ width: card.widthScreen - 16, height: card.heightScreen - 84 }}
+            style={{ width: card.widthScreen-16, height: card.heightScreen }}
             className="aspect-video bg-white" src={url} frameBorder="0"></iframe>
     </div>
 }
