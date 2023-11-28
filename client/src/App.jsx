@@ -35,7 +35,7 @@ export default function App() {
         }}>
             <div className="relative">
                 <Info />
-                {/* <FileSystem /> */}
+                <FileSystem />
                 <Hint>
                     <Hint.HotKey hotkey={["num", "LEFT"]}>
                         {"<Generate Card>"}

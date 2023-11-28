@@ -1,5 +1,6 @@
 import React, { useState } from "react";
 import { AiOutlineCaretDown, AiOutlineCaretRight } from "react-icons/ai";
+import formatBytes from "../../../utils/formatBytes";
 
 const Dir = ({ name, item, fileOnClick }) => {
   const [open, setOpen] = useState(true);
@@ -10,7 +11,8 @@ const Dir = ({ name, item, fileOnClick }) => {
           onClick={async () => {
             fileOnClick && fileOnClick(item);
           }}
-          className="pl-4 hover:underline"
+          className="pl-4 hover:underline text-green-300"
+          title={"file | " + formatBytes(item.size)}
         >
           {name}
         </span>
@@ -19,7 +21,8 @@ const Dir = ({ name, item, fileOnClick }) => {
           onClick={() => {
             setOpen(!open);
           }}
-          className="flex items-center gap-1 hover:underline"
+          className="flex items-center gap-1 hover:underline text-red-400"
+          title="segment"
         >
           {open ? <AiOutlineCaretRight /> : <AiOutlineCaretDown />}
           {name}
