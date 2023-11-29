@@ -16,7 +16,7 @@ export default function UrlCard({ card }) {
     }
 
     useEffect(() => {
-        inputRef.current.focus()
+        inputRef.current?.focus()
     }, [])
 
     console.log(card)
