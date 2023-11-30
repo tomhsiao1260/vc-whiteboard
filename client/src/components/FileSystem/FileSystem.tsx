@@ -5,6 +5,7 @@ import _ from "lodash";
 import { Resizable } from "re-resizable";
 import { cn } from "../../utils/cn";
 import PubSub from "pubsub-js";
+import { nanoid } from "nanoid";
 
 export default function FileSystem() {
   const [dir, setDir] = useState({});
@@ -20,6 +21,7 @@ export default function FileSystem() {
     const arraybuffer = await file.arrayBuffer();
     const blob = new Blob([arraybuffer], { type: file.name });
     PubSub.publish("onFileSelect", {
+      id: nanoid(),
       fileType: file.type,
       fileName: file.name,
       blob,
