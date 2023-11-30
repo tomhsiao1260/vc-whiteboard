@@ -27,7 +27,6 @@ export class CopyShader extends ShaderMaterial {
 
         void main() {
           vec4 texel = texture2D( tDiffuse, vUv );
-
           gl_FragColor = opacity * texel;
         }
       `

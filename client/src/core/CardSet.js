@@ -66,7 +66,6 @@ export default class CardSet {
     const name = fileName
     const type = fileType
 
-    // const card = new THREE.Mesh(geometry, new THREE.MeshBasicMaterial())
     const card = new THREE.Mesh(geometry, material)
     card.position.copy(center)
     card.userData = { id, name, type, center, w: 1, h: 1 }

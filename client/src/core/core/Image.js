@@ -40,13 +40,15 @@ export default class Image {
     this.height = texture.image.height
     this.buffer = new THREE.WebGLRenderTarget(this.width, this.height)
 
-    const size = 2
-    const mesh = new THREE.Mesh(new THREE.PlaneGeometry(size * this.width / this.height, size), material)
+    const size = 3
+    const mesh = new THREE.Mesh(new THREE.PlaneGeometry(2, 2, 1, 1), material)
     this.scene.add(mesh)
 
     card.material.uniforms.tDiffuse.value = this.buffer.texture
-    card.userData.w = size * this.width / this.height
-    card.userData.h = size
+    card.userData.w = mesh.geometry.parameters.width
+    card.userData.h = mesh.geometry.parameters.height
+    card.scale.x = mesh.geometry.parameters.width
+    card.scale.y = mesh.geometry.parameters.height
 
     this.render()
     this.time.trigger('tick')
