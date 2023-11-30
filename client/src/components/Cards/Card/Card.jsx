@@ -12,7 +12,7 @@ export default function Card({ card }) {
     const [isLoad, setIsLoad] = useState(false)
 
     useEffect(() => {
-        PubSub.subscribe("onFinishLoad", (_, { id }) => {
+        PubSub.subscribe("onFinishLoad", (_,{id}) => {
             console.log(id)
             id === card.id && setIsLoad(true)
         })
@@ -25,6 +25,8 @@ export default function Card({ card }) {
             "fixed translate-x-[-50%] translate-y-[-50%]", css(`
             top: ${card.positionScreen.y}px;
             left: ${card.positionScreen.x}px;
+            width: ${card.widthScreen}px;
+            height:${card.heightScreen}px;
         `))}>
         {isHover && <p className="absolute top-[-24px]">{card.name}</p>}
         {isLoad || <p className="absolute top-[50%] left-[50%] translate-x-[-50%] translate-y-[-50%] text-[#DDD] text-xl underline">loading...</p>}
