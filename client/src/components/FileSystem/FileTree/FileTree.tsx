@@ -12,7 +12,7 @@ const Dir = ({ name, item, fileOnClick, folderOnClick }) => {
           onClick={async () => {
             fileOnClick && fileOnClick(item);
           }}
-          className="pl-4 hover:underline text-green-300"
+          className="pl-4 hover:underline"
           title={"file | " + formatBytes(item.size)}
         >
           {name}
@@ -24,7 +24,7 @@ const Dir = ({ name, item, fileOnClick, folderOnClick }) => {
             setOpen(!open);
             folderOnClick && folderOnClick(item);
           }}
-          className="flex items-center gap-1 hover:underline text-red-400"
+          className="flex items-center gap-1 hover:underline"
           title="segment"
         >
           {open ? <AiOutlineCaretRight /> : <AiOutlineCaretDown />}
@@ -32,17 +32,27 @@ const Dir = ({ name, item, fileOnClick, folderOnClick }) => {
         </span>
       )}
       {item instanceof Object && open && (
-        <FileTree data={item} fileOnClick={fileOnClick} />
+        <FileTree
+          data={item}
+          fileOnClick={fileOnClick}
+          folderOnClick={folderOnClick}
+        />
       )}
     </li>
   );
 };
 
-const FileTree = ({ data, fileOnClick }) => {
+const FileTree = ({ data, fileOnClick, folderOnClick }) => {
   return (
     <ul className="text-sm cursor-pointer">
       {Object.entries(data).map(([name, item]) => (
-        <Dir key={name} name={name} item={item} fileOnClick={fileOnClick} />
+        <Dir
+          key={name}
+          name={name}
+          item={item}
+          fileOnClick={fileOnClick}
+          folderOnClick={folderOnClick}
+        />
       ))}
     </ul>
   );
