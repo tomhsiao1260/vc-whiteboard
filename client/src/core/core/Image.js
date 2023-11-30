@@ -30,20 +30,23 @@ export default class Image {
   async create(blob, uuid, card) {
     const blobUrl = URL.createObjectURL(blob)
     const texture = await new TextureLoader().loadAsync(blobUrl)
+    texture.minFilter = THREE.NearestFilter
+    texture.magFilter = THREE.NearestFilter
 
     const material = new ImageShader()
     material.uniforms.tDiffuse.value = texture
 
-    this.width = texture.image.width
-    this.height = texture.image.height
+    this.width = texture.image.width / 2
+    this.height = texture.image.height / 2
     this.buffer = new THREE.WebGLRenderTarget(this.width, this.height)
+
+    const size = 2
+    const mesh = new THREE.Mesh(new THREE.PlaneGeometry(size * this.width / this.height, size), material)
+    this.scene.add(mesh)
 
     card.material.uniforms.tDiffuse.value = this.buffer.texture
     card.userData.w = this.width
     card.userData.h = this.height
-
-    const mesh = new THREE.Mesh(new THREE.PlaneGeometry(this.width / this.height, 1), material)
-    this.scene.add(mesh)
 
     this.render()
     this.time.trigger('tick')
