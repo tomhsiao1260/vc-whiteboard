@@ -28,6 +28,7 @@ export default class Image {
   }
 
   async create(blob, uuid, card) {
+    // create a full screen texture image for rendering
     const blobUrl = URL.createObjectURL(blob)
     const texture = await new TextureLoader().loadAsync(blobUrl)
     texture.minFilter = THREE.NearestFilter
@@ -36,19 +37,28 @@ export default class Image {
     const material = new ImageShader()
     material.uniforms.tDiffuse.value = texture
 
-    this.width = texture.image.width
-    this.height = texture.image.height
-    this.buffer = new THREE.WebGLRenderTarget(this.width, this.height)
-
-    const size = 3
     const mesh = new THREE.Mesh(new THREE.PlaneGeometry(2, 2, 1, 1), material)
     this.scene.add(mesh)
 
+    // change card size via texture w, h info
+    const tWidth = texture.image.width
+    const tHeight = texture.image.height
+    const lMax = Math.max(tWidth, tHeight)
+    const s = (lMax < 10000) ? 1 : 10000 / lMax
+
+    this.width = tWidth * s
+    this.height = tHeight * s
+    this.buffer = new THREE.WebGLRenderTarget(this.width, this.height)
+
+    const size = 2
+    const fw = (lMax === tWidth) ? 1 : tWidth / lMax
+    const fh = (lMax === tHeight) ? 1 : tHeight / lMax
+
+    card.userData.w = size *  fw
+    card.userData.h = size * fh
+    card.scale.x = size *  fw
+    card.scale.y = size * fh
     card.material.uniforms.tDiffuse.value = this.buffer.texture
-    card.userData.w = mesh.geometry.parameters.width
-    card.userData.h = mesh.geometry.parameters.height
-    card.scale.x = mesh.geometry.parameters.width
-    card.scale.y = mesh.geometry.parameters.height
 
     this.render()
     this.time.trigger('tick')
