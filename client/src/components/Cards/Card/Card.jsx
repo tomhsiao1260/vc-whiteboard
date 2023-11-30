@@ -12,7 +12,8 @@ export default function Card({ card }) {
     const [isLoad, setIsLoad] = useState(false)
 
     useEffect(() => {
-        app.API.on("cardLoad", (id) => {
+        PubSub.subscribe("onFinishLoad", (_,{id}) => {
+            console.log(id)
             id === card.id && setIsLoad(true)
         })
     }, [])
