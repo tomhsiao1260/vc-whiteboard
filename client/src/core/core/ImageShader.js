@@ -1,6 +1,6 @@
 import { ShaderMaterial, DoubleSide } from "three"
 
-export class HintShader extends ShaderMaterial {
+export class ImageShader extends ShaderMaterial {
   constructor(params) {
     super({
       transparent: true,

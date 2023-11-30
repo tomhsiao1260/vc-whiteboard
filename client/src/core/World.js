@@ -5,7 +5,6 @@ import CardSet from "./CardSet";
 // import GUIPanel from './GUIPanel'
 import Controls from "./Controls";
 import Application from "./Application";
-import { HintShader } from './core/HintShader';
 
 import PubSub from "pubsub-js";
 // import { TIFFLoader } from 'three/addons/loaders/TIFFLoader.js';
@@ -29,25 +28,6 @@ export default class World {
     this.setControls();
     this.setWhiteBoard();
     this.setCard();
-
-    // PubSub.subscribe("onFileSelect", async(eventName, fileObj) => {
-    //   console.log(eventName, fileObj)
-
-    //   const blobUrl = URL.createObjectURL(fileObj.blob)
-
-    //   // const texture = await new THREE.TextureLoader().loadAsync('Stitching_Megas.png')
-    //   const obj = await new OBJLoader().loadAsync(blobUrl)
-    //   // const texture = new THREE.TextureLoader().load(blobUrl)
-    //   console.log(obj)
-
-    //   // const material = new HintShader()
-    //   // material.uniforms.tDiffuse.value = texture
-
-    //   const mesh = new THREE.Mesh(obj.children[0].geometry, new THREE.MeshBasicMaterial())
-    //   // const mesh = new THREE.Mesh(new THREE.PlaneGeometry(1, 1), material)
-    //   mesh.position.set(0, 0, 0.5)
-    //   this.container.add(mesh)
-    // })
   }
 
   setControls() {
@@ -83,6 +63,18 @@ export default class World {
       const scenePos = this.getScenePosition(x, y, 100, 100)
       const card = this.cardSet.createIframe(id, scenePos.center, 800/400, 525/400)
       card.visible = false
+      this.container.add(card)
+      this.time.trigger("tick")
+    })
+
+    PubSub.subscribe("onFileSelect", async(eventName, data) => {
+      const { id, fileType, fileName, blob } = data
+
+      if (fileType.split('/')[0] !== 'image') return
+
+      const center = new THREE.Vector3()
+      const card = this.cardSet.createImage(id, fileType, fileName, blob, center)
+
       this.container.add(card)
       this.time.trigger("tick")
     })

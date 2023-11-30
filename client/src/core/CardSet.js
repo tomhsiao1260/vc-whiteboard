@@ -1,6 +1,6 @@
 import * as THREE from 'three'
 import Card from './core/Card'
-import Hint from './core/Hint'
+import Image from './core/Image'
 import PubSub from "pubsub-js";
 import { CopyShader } from './core/CopyShader'
 
@@ -21,26 +21,14 @@ export default class CardSet {
     if (name === '20230522181603') { info.w = 2912; info.h = 1060; }
     if (name === '20230509182749') { info.w = 3278; info.h = 1090; }
     if (name === '20230702185752') { info.w = 1746; info.h = 1726; }
-    if (name === ' ') { info.w = 1190 * 3; info.h = 1018 * 3; }
 
-    let viewer
-    if (name === ' ') {
-      viewer = new Hint({
-        info,
-        canvas: dom,
-        renderer: this.renderer,
-        time: this.time,
-        app: this.app,
-      })
-    } else {
-      viewer = new Card({
-        info,
-        canvas: dom,
-        renderer: this.renderer,
-        time: this.time,
-        app: this.app,
-      })
-    }
+    const viewer = new Card({
+      info,
+      canvas: dom,
+      renderer: this.renderer,
+      time: this.time,
+      app: this.app,
+    })
 
     viewer.controls.addEventListener('change', () => {
       this.render()
@@ -66,6 +54,28 @@ export default class CardSet {
     return card
   }
 
+  createImage(id, fileType, fileName, blob, center) {
+    const viewer = new Image({
+      renderer: this.renderer,
+      time: this.time,
+    })
+
+    const geometry = new THREE.PlaneGeometry(1, 1)
+    const material = new CopyShader()
+
+    const name = fileName
+    const type = fileType
+
+    const card = new THREE.Mesh(geometry, material)
+    card.position.copy(center)
+    card.userData = { id, name, type, center, w: 1, h: 1 }
+    this.list.push(card)
+
+    viewer.create(blob, id, card)
+
+    return card
+  }
+
   createIframe(id, center, width, height) {
     const geometry = new THREE.PlaneGeometry(width, height)
     const material = new THREE.MeshBasicMaterial()
@@ -75,7 +85,7 @@ export default class CardSet {
 
     const card = new THREE.Mesh(geometry, material)
     card.position.copy(center)
-    card.userData = { id, name, type, center, w: width, h: height, viewer: null, dom: null }
+    card.userData = { id, name, type, center, w: width, h: height }
     this.list.push(card)
 
     PubSub.publish("onFinishLoad", { id })
