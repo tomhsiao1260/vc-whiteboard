@@ -36,8 +36,8 @@ export default class Image {
     const material = new ImageShader()
     material.uniforms.tDiffuse.value = texture
 
-    this.width = texture.image.width / 2
-    this.height = texture.image.height / 2
+    this.width = texture.image.width
+    this.height = texture.image.height
     this.buffer = new THREE.WebGLRenderTarget(this.width, this.height)
 
     const size = 2
@@ -45,8 +45,8 @@ export default class Image {
     this.scene.add(mesh)
 
     card.material.uniforms.tDiffuse.value = this.buffer.texture
-    card.userData.w = this.width
-    card.userData.h = this.height
+    card.userData.w = size * this.width / this.height
+    card.userData.h = size
 
     this.render()
     this.time.trigger('tick')
