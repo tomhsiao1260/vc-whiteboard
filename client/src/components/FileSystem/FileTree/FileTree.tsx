@@ -2,11 +2,12 @@ import React, { useState } from "react";
 import { AiOutlineCaretDown, AiOutlineCaretRight } from "react-icons/ai";
 import formatBytes from "../../../utils/formatBytes";
 
-const Dir = ({ name, item, fileOnClick }) => {
+const Dir = ({ name, item, fileOnClick, folderOnClick }) => {
   const [open, setOpen] = useState(true);
   return (
     <li className="pl-4">
       {item instanceof File ? (
+        // file
         <span
           onClick={async () => {
             fileOnClick && fileOnClick(item);
@@ -17,9 +18,11 @@ const Dir = ({ name, item, fileOnClick }) => {
           {name}
         </span>
       ) : (
+        // folder
         <span
           onClick={() => {
             setOpen(!open);
+            folderOnClick && folderOnClick(item);
           }}
           className="flex items-center gap-1 hover:underline text-red-400"
           title="segment"

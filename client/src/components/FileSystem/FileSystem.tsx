@@ -26,8 +26,10 @@ export default function FileSystem() {
     });
   };
 
+  const handleFolderOnClick = async () => {};
+
   return (
-    <div className="fixed mx-3 my-1 top-16 h-[90%] overflow-auto">
+    <div className="fixed mx-3 my-1 top-16 h-[90%] overflow-auto z-50">
       {!_.isEmpty(dir) ? (
         <Resizable
           onResizeStart={() => {
@@ -41,7 +43,11 @@ export default function FileSystem() {
             isResize ? "" : "border-[#111]"
           )}
         >
-          <FileTree data={dir} fileOnClick={handleFileOnClick} />
+          <FileTree
+            data={dir}
+            fileOnClick={handleFileOnClick}
+            folderOnClick={handleFolderOnClick}
+          />
         </Resizable>
       ) : (
         <button
