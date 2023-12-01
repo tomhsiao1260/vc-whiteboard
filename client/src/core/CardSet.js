@@ -76,7 +76,7 @@ export default class CardSet {
     return card
   }
 
-  createText(id, fileType, fileName, blob, center, width, height) {
+  createText(id, fileType, fileName, text, center, width, height) {
     const geometry = new THREE.PlaneGeometry(width, height)
     const material = new THREE.MeshBasicMaterial()
 
@@ -85,7 +85,7 @@ export default class CardSet {
 
     const card = new THREE.Mesh(geometry, material)
     card.position.copy(center)
-    card.userData = { id, name, type, center, w: width, h: height }
+    card.userData = { id, name, type, center, content: text, w: width, h: height }
     this.list.push(card)
 
     PubSub.publish("onFinishLoad", { id })
