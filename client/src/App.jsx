@@ -16,6 +16,9 @@ import UrlCards from "./components/UrlCards/UrlCards";
 import Cards from "./components/Cards/Cards";
 import useCardRender from "./hooks/deprecated/useCardRender";
 import Version from './components/Version/Version';
+import TextCards from "./components/TextCards/TextCards"
+import { Analytics } from '@vercel/analytics/react';
+
 
 export default function App() {
 
@@ -37,9 +40,9 @@ export default function App() {
                 <Info />
                 <FileSystem />
                 <Hint>
-                    <Hint.HotKey hotkey={["num", "LEFT"]}>
+                    {/* <Hint.HotKey hotkey={["num", "LEFT"]}>
                         {"<Generate Card>"}
-                    </Hint.HotKey>
+                    </Hint.HotKey> */}
                     <Hint.HotKey hotkey={["RIGHT"]}>
                         {"<Generate Embedded Card>"}
                     </Hint.HotKey>
@@ -58,8 +61,10 @@ export default function App() {
                 <Version />
                 <Cards />
                 <UrlCards />
+                <TextCards />
                 <canvas className='webgl'></canvas>
             </div>
+            <Analytics />
         </AppContext.Provider>
 
     )

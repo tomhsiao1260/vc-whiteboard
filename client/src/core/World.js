@@ -58,19 +58,18 @@ export default class World {
     this.time.on('tick', () => { PubSub.publish("onWhiteboardUpdate", this.getConfig()) })
     this.sizes.on("resize", () => { PubSub.publish("onWhiteboardUpdate", this.getConfig()) });
 
+    // iframe generate
     PubSub.subscribe("onUrlCardGenerated", (eventName, { id, x, y }) => {
       // I don't use the last two params (random numbers)
       const scenePos = this.getScenePosition(x, y, 100, 100)
-      const card = this.cardSet.createIframe(id, scenePos.center, 800/400, 525/400)
+      const card = this.cardSet.createIframe(id, scenePos.center, 800 / 300, 525 / 300)
       card.visible = false
       this.container.add(card)
       this.time.trigger("tick")
     })
 
-    PubSub.subscribe("onFileSelect", async(eventName, data) => {
-      const { id, fileType, fileName, blob } = data
-
-      if (fileType.split('/')[0] !== 'image') return
+    PubSub.subscribe("onFileSelect", async (eventName, data) => {
+      const spl = data.fileType.split('/')[0]
 
       // find out whiteboard position on screen center
       const raycaster = new THREE.Raycaster()
@@ -78,11 +77,29 @@ export default class World {
       const intersects = raycaster.intersectObjects([this.whiteBoard.container])
       if (!intersects.length) return;
 
-      const center = intersects[0].point
-      const card = this.cardSet.createImage(id, fileType, fileName, blob, center)
+      if (spl === 'image') {
+        const { id, fileType, fileName, blob } = data
+        const center = intersects[0].point
+        const card = this.cardSet.createImage(id, fileType, fileName, blob, center)
 
-      this.container.add(card)
-      this.time.trigger("tick")
+        this.container.add(card)
+        this.time.trigger("tick")
+        return
+      }
+
+      if (spl === 'text' || spl === 'application') {
+        const { id, fileType, fileName, text } = data
+        const width = 9 / 3
+        const height = 16 / 8
+        const center = intersects[0].point
+        const card = this.cardSet.createText(id, fileType, fileName, text, center, width, height)
+        card.visible = false
+
+        this.container.add(card)
+        this.time.trigger("tick")
+
+        return
+      }
     })
 
     // delete the card
@@ -277,6 +294,7 @@ export default class World {
       cardInfo.id = card.userData.id
       cardInfo.name = card.userData.name
       cardInfo.type = card.userData.type
+      cardInfo.content = card.userData.content
       cardInfo.position = position
       cardInfo.positionScreen = positionScreen
       cardInfo.width = parseFloat(card.userData.w.toFixed(5))
@@ -318,9 +336,9 @@ export default class World {
 
     const raycaster = new THREE.Raycaster()
     raycaster.setFromCamera(mc, this.camera.instance)
-    const intersectsC = raycaster.intersectObjects([ this.whiteBoard.container ])
+    const intersectsC = raycaster.intersectObjects([this.whiteBoard.container])
     raycaster.setFromCamera(me, this.camera.instance)
-    const intersectsE = raycaster.intersectObjects([ this.whiteBoard.container ])
+    const intersectsE = raycaster.intersectObjects([this.whiteBoard.container])
     if (!intersectsC.length || !intersectsE.length) return
 
     const center = intersectsC[0].point

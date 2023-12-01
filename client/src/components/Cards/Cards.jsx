@@ -6,7 +6,6 @@ import Card from "./Card/Card"
 export default function Cards() {
 
     const { whiteboard } = useContext(AppContext)
-    console.log(whiteboard)
     const cards = whiteboard ? filter(whiteboard.cards, (card) => card.type.split("/")[0] === "image") : null
 
     return (
