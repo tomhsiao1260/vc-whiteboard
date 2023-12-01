@@ -62,13 +62,13 @@ export default class World {
     PubSub.subscribe("onUrlCardGenerated", (eventName, { id, x, y }) => {
       // I don't use the last two params (random numbers)
       const scenePos = this.getScenePosition(x, y, 100, 100)
-      const card = this.cardSet.createIframe(id, scenePos.center, 800/400, 525/400)
+      const card = this.cardSet.createIframe(id, scenePos.center, 800 / 400, 525 / 400)
       card.visible = false
       this.container.add(card)
       this.time.trigger("tick")
     })
 
-    PubSub.subscribe("onFileSelect", async(eventName, data) => {
+    PubSub.subscribe("onFileSelect", async (eventName, data) => {
       const spl = data.fileType.split('/')[0]
 
       // find out whiteboard position on screen center
@@ -87,17 +87,16 @@ export default class World {
         return
       }
 
-      if (spl !== 'text' && spl !== 'application') {
+      if (spl === 'text' || spl === 'application') {
         const { id, fileType, fileName, text } = data
-        const width = 9 / 10
-        const height = 16 / 10
+        const width = 9 / 3
+        const height = 16 / 8
         const center = intersects[0].point
         const card = this.cardSet.createText(id, fileType, fileName, text, center, width, height)
         card.visible = false
 
         this.container.add(card)
         this.time.trigger("tick")
-        return
 
         return
       }
@@ -337,9 +336,9 @@ export default class World {
 
     const raycaster = new THREE.Raycaster()
     raycaster.setFromCamera(mc, this.camera.instance)
-    const intersectsC = raycaster.intersectObjects([ this.whiteBoard.container ])
+    const intersectsC = raycaster.intersectObjects([this.whiteBoard.container])
     raycaster.setFromCamera(me, this.camera.instance)
-    const intersectsE = raycaster.intersectObjects([ this.whiteBoard.container ])
+    const intersectsE = raycaster.intersectObjects([this.whiteBoard.container])
     if (!intersectsC.length || !intersectsE.length) return
 
     const center = intersectsC[0].point
