@@ -62,7 +62,7 @@ export default class World {
     PubSub.subscribe("onUrlCardGenerated", (eventName, { id, x, y }) => {
       // I don't use the last two params (random numbers)
       const scenePos = this.getScenePosition(x, y, 100, 100)
-      const card = this.cardSet.createIframe(id, scenePos.center, 800 / 400, 525 / 400)
+      const card = this.cardSet.createIframe(id, scenePos.center, 800 / 300, 525 / 300)
       card.visible = false
       this.container.add(card)
       this.time.trigger("tick")
