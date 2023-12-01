@@ -9,7 +9,7 @@ export default class WhiteBoard {
   }
 
   setWhiteBoard() {
-    const geometry = new THREE.PlaneGeometry(30, 15)
+    const geometry = new THREE.PlaneGeometry(60, 30)
     const material = new THREE.MeshBasicMaterial({ color: '#262626' })
     const mesh = new THREE.Mesh(geometry, material)
 

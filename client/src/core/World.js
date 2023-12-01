@@ -72,7 +72,13 @@ export default class World {
 
       if (fileType.split('/')[0] !== 'image') return
 
-      const center = new THREE.Vector3()
+      // find out whiteboard position on screen center
+      const raycaster = new THREE.Raycaster()
+      raycaster.setFromCamera(new THREE.Vector3(), this.camera.instance)
+      const intersects = raycaster.intersectObjects([this.whiteBoard.container])
+      if (!intersects.length) return;
+
+      const center = intersects[0].point
       const card = this.cardSet.createImage(id, fileType, fileName, blob, center)
 
       this.container.add(card)
@@ -139,9 +145,9 @@ export default class World {
       const intersects = this.controls.getRayCast(this.cardSet.list);
       if (!intersects.length) return;
 
-      const card = intersects[0].object;
+      const card = intersects[intersects.length - 1].object;
       this.cardSet.targetCard = card;
-      this.mouseDownPos = intersects[0].point;
+      this.mouseDownPos = intersects[intersects.length - 1].point;
       this.cardDownPos = card.position.clone();
       this.camera.controls.enabled = false;
     });
