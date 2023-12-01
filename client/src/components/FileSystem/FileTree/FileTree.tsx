@@ -15,7 +15,6 @@ const Dir = ({ name, item, fileOnClick, folderOnClick }) => {
 
   const distinguishFileType = useCallback((name: string, type: string) => {
     const spl = type.split("/")[0];
-    console.log(type);
     if (spl === "image") {
       return (
         <>

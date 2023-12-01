@@ -13,7 +13,6 @@ export default function Card({ card }) {
 
     useEffect(() => {
         PubSub.subscribe("onFinishLoad", (_, { id }) => {
-            console.log(id)
             id === card.id && setIsLoad(true)
         })
 
