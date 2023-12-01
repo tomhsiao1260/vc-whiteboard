@@ -20,11 +20,13 @@ export default function FileSystem() {
   const handleFileOnClick = async (file: File) => {
     const arraybuffer = await file.arrayBuffer();
     const blob = new Blob([arraybuffer], { type: file.name });
+    const text = await file.text();
     PubSub.publish("onFileSelect", {
       id: nanoid(),
       fileType: file.type,
       fileName: file.name,
       blob,
+      text,
     });
   };
 

@@ -22,7 +22,7 @@ const Dir = ({ name, item, fileOnClick, folderOnClick }) => {
           {name}
         </>
       );
-    } else if (spl === "text" || type.split("/")[0] === "application") {
+    } else if (spl === "text" || spl === "application") {
       return (
         <>
           <LuFileText />
@@ -64,7 +64,7 @@ const Dir = ({ name, item, fileOnClick, folderOnClick }) => {
           className="flex items-center gap-1 hover:underline"
           title="segment"
         >
-          {open ? <AiOutlineCaretRight /> : <AiOutlineCaretDown />}
+          {open ? <AiOutlineCaretDown /> : <AiOutlineCaretRight />}
           {name.match(/202[34]\d+/gu) ? (
             <div className="flex items-center gap-2">
               <LuScroll className="text-orange-500" />
