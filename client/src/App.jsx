@@ -17,6 +17,8 @@ import Cards from "./components/Cards/Cards";
 import useCardRender from "./hooks/deprecated/useCardRender";
 import Version from './components/Version/Version';
 import TextCards from "./components/TextCards/TextCards"
+import { Analytics } from '@vercel/analytics/react';
+
 
 export default function App() {
 
@@ -62,6 +64,7 @@ export default function App() {
                 <TextCards />
                 <canvas className='webgl'></canvas>
             </div>
+            <Analytics />
         </AppContext.Provider>
 
     )

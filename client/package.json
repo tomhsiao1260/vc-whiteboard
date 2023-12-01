@@ -14,6 +14,7 @@
     "@types/lodash": "^4.14.201",
     "@types/pubsub-js": "^1.8.6",
     "@types/wicg-file-system-access": "^2023.10.3",
+    "@vercel/analytics": "^1.1.1",
     "cssnano": "^6.0.1",
     "lodash": "^4.17.21",
     "nanoid": "^5.0.1",
