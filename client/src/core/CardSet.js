@@ -76,6 +76,23 @@ export default class CardSet {
     return card
   }
 
+  createText(id, fileType, fileName, blob, center, width, height) {
+    const geometry = new THREE.PlaneGeometry(width, height)
+    const material = new THREE.MeshBasicMaterial()
+
+    const name = fileName
+    const type = fileType
+
+    const card = new THREE.Mesh(geometry, material)
+    card.position.copy(center)
+    card.userData = { id, name, type, center, w: width, h: height }
+    this.list.push(card)
+
+    PubSub.publish("onFinishLoad", { id })
+
+    return card
+  }
+
   createIframe(id, center, width, height) {
     const geometry = new THREE.PlaneGeometry(width, height)
     const material = new THREE.MeshBasicMaterial()
