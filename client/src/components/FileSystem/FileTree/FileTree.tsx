@@ -11,7 +11,7 @@ import {
 } from "react-icons/lu";
 
 const Dir = ({ name, item, fileOnClick, folderOnClick }) => {
-  const [open, setOpen] = useState(true);
+  const [open, setOpen] = useState(false);
 
   const distinguishFileType = useCallback((name: string, type: string) => {
     const spl = type.split("/")[0];
