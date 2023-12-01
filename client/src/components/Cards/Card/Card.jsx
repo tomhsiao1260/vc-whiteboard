@@ -19,7 +19,7 @@ export default function Card({ card }) {
 
         setTimeout(() => {
             setIsLoad(true)
-        }, 8000)
+        }, 4000)
 
     }, [])
 
