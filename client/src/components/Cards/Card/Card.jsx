@@ -27,9 +27,9 @@ export default function Card({ card }) {
         PubSub.publish("onCardOpacityChange", { id: card.id, opacity })
     }, [opacity, card.id])
 
-    const [rotation, setRotation] = useState(1);
+    const [rotation, setRotation] = useState(0);
     useEffect(() => {
-        PubSub.publish("onCardRotationChange", { id: card.id, rotationF })
+        PubSub.publish("onCardRotationChange", { id: card.id, rotation })
     }, [rotation, card.id])
 
     return <div

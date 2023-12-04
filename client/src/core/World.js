@@ -68,6 +68,25 @@ export default class World {
       this.time.trigger("tick")
     })
 
+    // image card opacity
+    PubSub.subscribe("onCardOpacityChange", (eventName, { id, opacity }) => {
+      this.cardSet.list.forEach((card) => {
+        if (id !== card.userData.id) return
+        card.material.uniforms.opacity.value = opacity
+        this.time.trigger("tick")
+      })
+    })
+
+    // image card rotation
+    PubSub.subscribe("onCardRotationChange", (eventName, { id, rotation }) => {
+      this.cardSet.list.forEach((card) => {
+        if (id !== card.userData.id) return
+        console.log(rotation)
+        card.rotation.z = 2 * Math.PI * (rotation / 360)
+        this.time.trigger("tick")
+      })
+    })
+
     PubSub.subscribe("onFileSelect", async (eventName, data) => {
       const spl = data.fileType.split('/')[0]
 
@@ -301,6 +320,8 @@ export default class World {
       cardInfo.height = parseFloat(card.userData.h.toFixed(5))
       cardInfo.widthScreen = parseInt(info.width)
       cardInfo.heightScreen = parseInt(info.height)
+      cardInfo.opacity = parseFloat(card.material.uniforms.opacity.value.toFixed(2))
+      cardInfo.rotation = parseFloat((360 * card.rotation.z / (2 * Math.PI)).toFixed(1))
 
       cardSetInfo.push(cardInfo)
     })
