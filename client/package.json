@@ -11,6 +11,7 @@
   },
   "dependencies": {
     "@emotion/css": "^11.11.2",
+    "@radix-ui/react-slider": "^1.1.2",
     "@types/lodash": "^4.14.201",
     "@types/pubsub-js": "^1.8.6",
     "@types/wicg-file-system-access": "^2023.10.3",

@@ -1,8 +1,6 @@
-import { useCallback, useContext, useEffect, useRef, useState } from "react"
+import { useEffect, useRef, useState } from "react"
 import { cn } from "../../../utils/cn"
 import { css } from "@emotion/css"
-import AppContext from "../../../context/AppContext";
-import { filter } from "lodash";
 
 export default function UrlCard({ card }) {
 
@@ -11,18 +9,30 @@ export default function UrlCard({ card }) {
     const [inupt, setInput] = useState("");
     const [url, setUrl] = useState("");
 
+    const [isVisable, setIsVisable] = useState(true);
+
     const handleClose = () => {
         PubSub.publish("onUrlCardDelete", { id: card.id })
+    }
+
+    const handleEnter = () => {
+        setIsVisable(true)
+    }
+
+    const handleLeave = () => {
+        setIsVisable(false)
+
     }
 
     useEffect(() => {
         inputRef.current?.focus()
     }, [])
 
-    console.log(card)
-
-    return <div className={cn(
-        "fixed translate-x-[-50%] translate-y-[-50%]", "flex flex-col gap-2 p-2", css(`
+    return <div
+        onMouseEnter={handleEnter}
+        onMouseLeave={handleLeave}
+        className={cn(
+            "fixed translate-x-[-50%] translate-y-[-50%]", "flex flex-col p-2", css(`
             top: ${card.positionScreen.y}px;
             left: ${card.positionScreen.x}px;
             width: ${card.widthScreen}px;
@@ -30,7 +40,8 @@ export default function UrlCard({ card }) {
    
         `))}>
         <div
-            className="bg-[#111] z-10">
+            style={{ opacity: isVisable ? 1 : 0 }}
+            className="bg-[#111] z-10 transition-opacity duration-700">
             {card.heightScreen < 150 ? <></> :
                 <div className="flex justify-between px-2 text-lg cursor-pointer">
                     <p>From the web</p>
@@ -49,7 +60,7 @@ export default function UrlCard({ card }) {
                 type="text" />}
         </div>
         <iframe
-            style={{ width: card.widthScreen-16, height: card.heightScreen }}
-            className="aspect-video bg-white" src={url} frameBorder="0"></iframe>
+            style={{ width: card.widthScreen - 16, height: card.heightScreen }}
+            className="aspect-video" src={url} frameBorder="0"></iframe>
     </div>
 }
