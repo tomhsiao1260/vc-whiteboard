@@ -24,8 +24,8 @@ export default function Card({ card }) {
     }, [card.id])
 
     useEffect(() => {
-        PubSub.publish("onCardOpacityChange", { id, opacity })
-    }, [opacity])
+        PubSub.publish("onCardOpacityChange", { id: card.id, opacity })
+    }, [opacity, card.id])
 
     return <div
         ref={hover}

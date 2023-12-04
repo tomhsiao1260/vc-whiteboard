@@ -15,7 +15,5 @@ export default function TextCards() {
       )
     : null;
 
-  console.log(cards);
-
   return map(cards, (card) => <TextCard key={card.id} card={card} />);
 }
