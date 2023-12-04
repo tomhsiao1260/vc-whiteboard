@@ -12,8 +12,6 @@ export default function Card({ card }) {
     const [hover, isHover] = useHover();
     const [isLoad, setIsLoad] = useState(false)
 
-    const [opacity, setOpacity] = useState(1)
-
     useEffect(() => {
         PubSub.subscribe("onFinishLoad", (_, { id }) => {
             id === card.id && setIsLoad(true)
@@ -23,9 +21,16 @@ export default function Card({ card }) {
         }, 4000)
     }, [card.id])
 
+
+    const [opacity, setOpacity] = useState(1)
     useEffect(() => {
         PubSub.publish("onCardOpacityChange", { id: card.id, opacity })
     }, [opacity, card.id])
+
+    const [rotation, setRotation] = useState(1);
+    useEffect(() => {
+        PubSub.publish("onCardRotationChange", { id: card.id, rotationF })
+    }, [rotation, card.id])
 
     return <div
         ref={hover}
@@ -39,17 +44,30 @@ export default function Card({ card }) {
         `))}>
         {<div
             style={{ opacity: isHover ? 1 : 0 }}
-            className="w-full absolute top-[-24px] flex justify-between">
+            className="w-full absolute top-[-44px] flex justify-between items-end">
             <p>{card.name}</p>
-            <div className="flex gap-2 text-black">
-                <p className="text-white">opacity</p>
-                <div className="py-1 w-32 bg-transparent flex items-center">
-                    <Slider
-                        value={[opacity * 100]}
-                        onValueChange={(v) => {
-                            setOpacity(v[0] / 100)
-                        }}
-                        className="w-full" max={100} step={1} />
+            <div className="flex flex-col gap-0.5">
+                <div className="flex gap-2 text-black">
+                    <p className="text-white">rotation</p>
+                    <div className="py-1 w-32 bg-transparent flex items-center">
+                        <Slider
+                            value={[rotation]}
+                            onValueChange={(v) => {
+                                setRotation(v[0])
+                            }}
+                            className="w-full" max={360} step={1} />
+                    </div>
+                </div>
+                <div className="flex gap-2 text-black justify-between">
+                    <p className="text-white">opacity</p>
+                    <div className="py-1 w-32 bg-transparent flex items-center">
+                        <Slider
+                            value={[opacity * 100]}
+                            onValueChange={(v) => {
+                                setOpacity(v[0] / 100)
+                            }}
+                            className="w-full" max={100} step={1} />
+                    </div>
                 </div>
             </div>
         </div>}
