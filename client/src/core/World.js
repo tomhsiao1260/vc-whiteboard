@@ -72,6 +72,7 @@ export default class World {
     PubSub.subscribe("onCardOpacityChange", (eventName, { id, opacity }) => {
       this.cardSet.list.forEach((card) => {
         if (id !== card.userData.id) return
+        if (!card.material.uniforms.opacity) return
         card.material.uniforms.opacity.value = opacity
         this.time.trigger("tick")
       })
@@ -81,7 +82,6 @@ export default class World {
     PubSub.subscribe("onCardRotationChange", (eventName, { id, rotation }) => {
       this.cardSet.list.forEach((card) => {
         if (id !== card.userData.id) return
-        console.log(rotation)
         card.rotation.z = 2 * Math.PI * (rotation / 360)
         this.time.trigger("tick")
       })
@@ -295,7 +295,7 @@ export default class World {
 
     const cardSetInfo = []
     this.cardSet.list.forEach((card) => {
-      const cardInfo = {}
+      const cardInfo = {}      
 
       const position = {}
       position.x = parseFloat(card.userData.center.x.toFixed(5))
@@ -320,8 +320,11 @@ export default class World {
       cardInfo.height = parseFloat(card.userData.h.toFixed(5))
       cardInfo.widthScreen = parseInt(info.width)
       cardInfo.heightScreen = parseInt(info.height)
-      cardInfo.opacity = parseFloat(card.material.uniforms.opacity.value.toFixed(2))
       cardInfo.rotation = parseFloat((360 * card.rotation.z / (2 * Math.PI)).toFixed(1))
+
+      if (card.material && card.material.uniforms && card.material.uniforms.opacity) {
+        cardInfo.opacity = parseFloat(card.material.uniforms.opacity.value.toFixed(2))
+      }
 
       cardSetInfo.push(cardInfo)
     })
