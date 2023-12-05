@@ -54,10 +54,13 @@ export default class Image {
     const fw = (lMax === tWidth) ? 1 : tWidth / lMax
     const fh = (lMax === tHeight) ? 1 : tHeight / lMax
 
-    card.userData.w = size *  fw
-    card.userData.h = size * fh
-    card.scale.x = size *  fw
-    card.scale.y = size * fh
+    card.userData.wo = size *  fw
+    card.userData.ho = size * fh
+
+    card.userData.w = card.userData.wo
+    card.userData.h = card.userData.ho
+    card.scale.x = card.userData.wo
+    card.scale.y = card.userData.ho
     card.material.uniforms.tDiffuse.value = this.buffer.texture
 
     this.render()

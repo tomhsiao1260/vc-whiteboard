@@ -32,6 +32,11 @@ export default function Card({ card }) {
         PubSub.publish("onCardRotationChange", { id: card.id, rotation: rotation - 180 })
     }, [rotation, card.id])
 
+    const [scale, setScale] = useState(1);
+    useEffect(() => {
+        PubSub.publish("onCardScaleChange", { id: card.id, scale })
+    }, [scale, card.id])
+
     return <div
         ref={hover}
         className={cn(
@@ -43,7 +48,7 @@ export default function Card({ card }) {
         `))}>
         {<div
             style={{ opacity: isHover ? 1 : 0 }}
-            className="w-full absolute top-[-44px] flex justify-between items-end">
+            className="w-full absolute top-[-68px] flex justify-between items-end">
             <p>{card.name}</p>
             <div className="flex flex-col gap-0.5">
                 <div className="flex gap-2 text-black">
@@ -55,6 +60,17 @@ export default function Card({ card }) {
                                 setRotation(v[0])
                             }}
                             className="w-full" max={360} step={1} />
+                    </div>
+                </div>
+                <div className="flex gap-2 text-black justify-between">
+                    <p className="text-white">scale</p>
+                    <div className="py-1 w-32 bg-transparent flex items-center">
+                        <Slider
+                            value={[scale]}
+                            onValueChange={(v) => {
+                                setScale(v[0])
+                            }}
+                            className="w-full" max={2} step={0.01} />
                     </div>
                 </div>
                 <div className="flex gap-2 text-black justify-between">
