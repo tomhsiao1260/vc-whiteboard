@@ -94,8 +94,8 @@ export default class World {
         const { wo, ho } = card.userData
         card.userData.w = wo * scale
         card.userData.h = ho * scale
-        card.scale.x = wo * scale
-        card.scale.y = ho * scale
+        card.scale.x = scale
+        card.scale.y = scale
         this.time.trigger("tick")
       })
     })

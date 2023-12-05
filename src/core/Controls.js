@@ -23,8 +23,10 @@ export default class Controls {
       this.time.trigger('mouseMove')
     })
 
-    // after pressing down the mouse button
+    // after pressing down the mouse button (for left click only)
     window.addEventListener('pointerdown', (e) => {
+      if (e.button !== 0) return
+
       const name = e.srcElement.className
       // console.log(name)
       // if (name !== 'webgl' && name !== 'cardDOM') return
