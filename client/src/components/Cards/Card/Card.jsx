@@ -48,7 +48,7 @@ export default function Card({ card }) {
         `))}>
         {<div
             style={{ opacity: isHover ? 1 : 0 }}
-            className="w-full absolute top-[-68px] flex justify-between items-end">
+            className="w-full absolute top-[-68px] flex justify-between items-end gap-4">
             <p>{card.name}</p>
             <div className="flex flex-col gap-0.5">
                 <div className="flex gap-2 text-black">
