@@ -26,7 +26,10 @@ export default function UrlCard({ card }) {
         if (url) {
             setIsVisable(false)
         }
+    }
 
+    const handleFlip = () => {
+        setFlip(!flip)
     }
 
     useEffect(() => {
@@ -37,6 +40,11 @@ export default function UrlCard({ card }) {
     useEffect(() => {
         PubSub.publish("onCardRotationChange", { id: card.id, rotation: rotation - 180 })
     }, [rotation, card.id])
+
+    const [flip, setFlip] = useState(false);
+    useEffect(() => {
+        PubSub.publish("onCardFlipChange", { id: card.id, flip })
+    }, [flip, card.id])
 
     return <div
         ref={hover}
@@ -50,6 +58,22 @@ export default function UrlCard({ card }) {
             height:${card.heightScreen}px;
    
         `))}>
+        <div style={{ opacity: isVisable ? 1 : 0 }}
+            className="flex flex-col gap-0.5 transition-opacity duration-700 items-end">
+            <div className="flex gap-2 text-black">
+                <p className="text-white">flip</p>
+                <div className="py-1 w-32 bg-transparent flex items-center">
+                    <label>
+                        <input
+                          type="checkbox"
+                          name="flip"
+                          checked={flip}
+                          onChange={handleFlip}
+                        />
+                    </label>
+                </div>
+            </div>
+        </div>
         <div style={{ opacity: isVisable ? 1 : 0 }}
             className="flex flex-col gap-0.5 transition-opacity duration-700 items-end">
             <div className="flex gap-2 text-black">
@@ -85,7 +109,7 @@ export default function UrlCard({ card }) {
                 type="text" />}
         </div>
         <iframe
-            style={{ width: card.widthScreen - 16, height: card.heightScreen, transform: `rotate(${rotation - 180}deg)`, transformOrigin: 'center' }}
+            style={{ width: card.widthScreen - 16, height: card.heightScreen, transform: `rotate(${rotation - 180}deg) scaleX(${flip ? -1 : 1})`, transformOrigin: 'center' }}
             className="aspect-video" src={url} frameBorder="0"></iframe>
     </div>
 }
