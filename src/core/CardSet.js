@@ -102,7 +102,7 @@ export default class CardSet {
 
     const card = new THREE.Mesh(geometry, material)
     card.position.copy(center)
-    card.userData = { id, name, type, center, w: width, h: height }
+    card.userData = { id, name, type, center, w: width, h: height, wo: width, ho: height }
     this.list.push(card)
 
     PubSub.publish("onFinishLoad", { id })

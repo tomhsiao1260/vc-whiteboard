@@ -36,15 +36,20 @@ export default function UrlCard({ card }) {
         inputRef.current?.focus()
     }, [])
 
+    const [flip, setFlip] = useState(false);
+    useEffect(() => {
+        PubSub.publish("onCardFlipChange", { id: card.id, flip })
+    }, [flip, card.id])
+
     const [rotation, setRotation] = useState(180);
     useEffect(() => {
         PubSub.publish("onCardRotationChange", { id: card.id, rotation: rotation - 180 })
     }, [rotation, card.id])
 
-    const [flip, setFlip] = useState(false);
+    const [scale, setScale] = useState(1);
     useEffect(() => {
-        PubSub.publish("onCardFlipChange", { id: card.id, flip })
-    }, [flip, card.id])
+        PubSub.publish("onCardScaleChange", { id: card.id, scale })
+    }, [scale, card.id])
 
     return <div
         ref={hover}
@@ -71,6 +76,20 @@ export default function UrlCard({ card }) {
                           onChange={handleFlip}
                         />
                     </label>
+                </div>
+            </div>
+        </div>
+        <div style={{ opacity: isVisable ? 1 : 0 }}
+            className="flex flex-col gap-0.5 transition-opacity duration-700 items-end">
+            <div className="flex gap-2 text-black">
+                <p className="text-white">scale</p>
+                <div className="py-1 w-32 bg-transparent flex items-center">
+                    <Slider
+                        value={[scale]}
+                        onValueChange={(v) => {
+                            setScale(v[0])
+                        }}
+                        className="w-full" max={2} step={0.01} />
                 </div>
             </div>
         </div>
@@ -109,7 +128,12 @@ export default function UrlCard({ card }) {
                 type="text" />}
         </div>
         <iframe
-            style={{ width: card.widthScreen - 16, height: card.heightScreen, transform: `rotate(${rotation - 180}deg) scaleX(${flip ? -1 : 1})`, transformOrigin: 'center' }}
+            style={{
+                width: card.widthScreen - 16,
+                height: card.heightScreen,
+                transformOrigin: 'center',
+                transform: `rotate(${rotation - 180}deg) scaleX(${flip ? -1 : 1})`,
+            }}
             className="aspect-video" src={url} frameBorder="0"></iframe>
     </div>
 }
