@@ -27,15 +27,14 @@ export default function Card({ card }) {
         PubSub.publish("onCardOpacityChange", { id: card.id, opacity })
     }, [opacity, card.id])
 
-    const [rotation, setRotation] = useState(0);
+    const [rotation, setRotation] = useState(180);
     useEffect(() => {
-        PubSub.publish("onCardRotationChange", { id: card.id, rotation })
+        PubSub.publish("onCardRotationChange", { id: card.id, rotation: rotation - 180 })
     }, [rotation, card.id])
 
     return <div
         ref={hover}
         className={cn(
-            "hover:border-[#DDD] border-transparent border-2",
             "fixed translate-x-[-50%] translate-y-[-50%]", css(`
             top: ${card.positionScreen.y}px;
             left: ${card.positionScreen.x}px;
