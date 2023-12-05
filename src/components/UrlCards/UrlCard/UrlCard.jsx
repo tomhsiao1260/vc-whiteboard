@@ -12,20 +12,22 @@ export default function UrlCard({ card }) {
     const [url, setUrl] = useState("");
 
     const [hover, isHover] = useHover();
-    // const [isVisable, setIsVisable] = useState(true);
+    const [isVisable, setIsVisable] = useState(true);
 
     const handleClose = () => {
         PubSub.publish("onUrlCardDelete", { id: card.id })
     }
 
-    // const handleEnter = () => {
-    //     setIsVisable(true)
-    // }
+    const handleEnter = () => {
+        setIsVisable(true)
+    }
 
-    // const handleLeave = () => {
-    //     setIsVisable(false)
+    const handleLeave = () => {
+        if (url) {
+            setIsVisable(false)
+        }
 
-    // }
+    }
 
     useEffect(() => {
         inputRef.current?.focus()
@@ -38,8 +40,8 @@ export default function UrlCard({ card }) {
 
     return <div
         ref={hover}
-        // onMouseEnter={handleEnter}
-        // onMouseLeave={handleLeave}
+        onMouseEnter={handleEnter}
+        onMouseLeave={handleLeave}
         className={cn(
             "fixed translate-x-[-50%] translate-y-[-50%]", "flex flex-col p-2", css(`
             top: ${card.positionScreen.y}px;
@@ -48,7 +50,7 @@ export default function UrlCard({ card }) {
             height:${card.heightScreen}px;
    
         `))}>
-        <div style={{ opacity: isHover ? 1 : 0 }}
+        <div style={{ opacity: isVisable ? 1 : 0 }}
             className="flex flex-col gap-0.5 transition-opacity duration-700 items-end">
             <div className="flex gap-2 text-black">
                 <p className="text-white">rotation</p>
@@ -63,7 +65,7 @@ export default function UrlCard({ card }) {
             </div>
         </div>
         <div
-            style={{ opacity: isHover ? 1 : 0 }}
+            style={{ opacity: isVisable ? 1 : 0 }}
             className="bg-[#111] z-10 transition-opacity duration-700">
             {card.heightScreen < 150 ? <></> :
                 <div className="flex justify-between px-2 text-lg cursor-pointer">

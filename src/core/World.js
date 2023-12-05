@@ -87,6 +87,18 @@ export default class World {
       })
     })
 
+    // image card scale
+    PubSub.subscribe("onCardScaleChange", (eventName, { id, scale }) => {
+      this.cardSet.list.forEach((card) => {
+        if (id !== card.userData.id) return
+        card.userData.w = card.userData.wo * scale
+        card.userData.h = card.userData.ho * scale
+        card.scale.x = card.userData.wo * scale
+        card.scale.y = card.userData.ho * scale
+        this.time.trigger("tick")
+      })
+    })
+
     PubSub.subscribe("onFileSelect", async (eventName, data) => {
       const spl = data.fileType.split('/')[0]
 
