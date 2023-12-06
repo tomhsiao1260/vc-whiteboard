@@ -91,11 +91,14 @@ export default class World {
     PubSub.subscribe("onCardScaleChange", (eventName, { id, scale }) => {
       this.cardSet.list.forEach((card) => {
         if (id !== card.userData.id) return
+
         const { wo, ho } = card.userData
+        const { width, height } = card.geometry.parameters
         card.userData.w = wo * scale
         card.userData.h = ho * scale
-        card.scale.x = scale
-        card.scale.y = scale
+        card.scale.x = (wo / width) * scale
+        card.scale.y = (ho / height) * scale
+
         this.time.trigger("tick")
       })
     })
