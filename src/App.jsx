@@ -18,6 +18,7 @@ import useCardRender from "./hooks/deprecated/useCardRender";
 import Version from './components/Version/Version';
 import TextCards from "./components/TextCards/TextCards"
 import { Analytics } from '@vercel/analytics/react';
+import ScreenShot from "./components/ScreenShot/ScreenShot";
 
 
 export default function App() {
@@ -59,6 +60,7 @@ export default function App() {
                 {/*<About />*/}
                 <Social />
                 <Version />
+                <ScreenShot />
                 <Cards />
                 <UrlCards />
                 <TextCards />

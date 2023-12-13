@@ -67,52 +67,6 @@ export default function UrlCard({ card }) {
     const iframeRef = useRef();
 
     const takeSnapshot = async () => {
-        const canvas = document.createElement("canvas")
-        const ctx = canvas.getContext('2d')
-        const video = document.createElement("video")
-
-        const stream = await navigator.mediaDevices.getDisplayMedia({
-            preferCurrentTab: true,
-            video: { frameRate: 50 },
-        }).then(async (
-            result
-        ) => {
-            await new Promise((r) => {
-                setTimeout(r, 300);
-            })
-            if (document.hasFocus()) {
-                return result;
-            }
-            return waitForFocus(result);
-        });
-
-        video.autoplay = true;
-        video.muted = true;
-        video.playsInline = true;
-        video.srcObject = stream;
-        video.setAttribute(
-            "style",
-            "position:fixed;top:0;left:0;pointer-events:none;visibility:hidden;"
-        );
-
-        video.addEventListener('loadedmetadata', () => {
-
-            const p = window.devicePixelRatio;
-            const g = 10;
-            const width = 500;
-            const height = 300;
-
-            canvas.width = width;
-            canvas.height = height;
-
-            ctx.drawImage(video, p * g, p * g, width * p - 2 * p * g, height * p - 2 * p * g, 0, 0, width, height);
-
-            const image = canvas.toDataURL("image/png").replace("image/png", "image/octet-stream");
-            window.location.href = image;
-
-            video.srcObject.getTracks().forEach((t) => t.stop());
-            video.srcObject = null;
-        });
 
 
     };
