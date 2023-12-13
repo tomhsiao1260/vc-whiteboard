@@ -1,18 +1,9 @@
-import React, { useRef } from 'react'
-
-const video = document.createElement("video")
-video.style.position = 'absolute'
-video.style.top = 0
-video.style.right = 0
-// video.style.visibility = 'hidden'
-video.autoplay = true
-video.muted = true
-video.playsInline = true
-video.width = 500
-video.height = 300
+import React, { useContext, useRef } from 'react'
+import AppContext from "../../context/AppContext"
 
 export default function ScreenShot() {
 
+  const { video } = useContext(AppContext)
 
   const handleStart = async () => {
     const stream = await navigator.mediaDevices.getDisplayMedia({

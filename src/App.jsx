@@ -19,6 +19,7 @@ import Version from './components/Version/Version';
 import TextCards from "./components/TextCards/TextCards"
 import { Analytics } from '@vercel/analytics/react';
 import ScreenShot from "./components/ScreenShot/ScreenShot";
+import { useEffect, useState } from "react";
 
 
 export default function App() {
@@ -31,11 +32,29 @@ export default function App() {
     // 白板控制 (舊, 會重構)
     useCardRender(app);
 
+    const [video, setVideo] = useState(null)
+
+    useEffect(() => {
+        const video = document.createElement("video")
+        video.style.position = 'absolute'
+        video.style.top = 0
+        video.style.right = 0
+        // video.style.visibility = 'hidden'
+        video.autoplay = true
+        video.muted = true
+        video.playsInline = true
+        video.width = window.innerWidth
+        video.height = window.innerHeight
+        
+        setVideo(video)
+    }, [])
+
 
     return (
         <AppContext.Provider value={{
             app,
-            whiteboard
+            whiteboard,
+            video
         }}>
             <div className="relative">
                 <Info />
@@ -68,6 +87,5 @@ export default function App() {
             </div>
             <Analytics />
         </AppContext.Provider>
-
     )
 }
