@@ -79,15 +79,15 @@ export default function UrlCard({ card }) {
         const startY = iframeRef.current.getBoundingClientRect().y;
 
         const canvas = document.createElement("canvas")
-        canvas.style.position = 'absolute'
+        canvas.style.position = "fixed"
         canvas.style.bottom = 0
         canvas.style.left = 0
-        canvas.width = window.innerWidth
-        canvas.height = window.innerHeight
+        canvas.width = width
+        canvas.height = height
         const ctx = canvas.getContext('2d')
 
 
-        ctx.drawImage(video, startX, startY, width, height)
+        ctx.drawImage(video, startX, startY, width, height, startY, startY, width, height)
 
         canvas.toBlob((blob) => {
             const blobUrl = URL.createObjectURL(blob)
@@ -103,7 +103,7 @@ export default function UrlCard({ card }) {
             "fixed translate-x-[-50%] translate-y-[-50%]", css(`
             top: ${card.positionScreen.y}px;
             left: ${card.positionScreen.x}px;
-            width: ${card.widthScreen}px;
+            width: ${card.widthScreen}px;   
             height:${card.heightScreen}px;
    
         `))}>

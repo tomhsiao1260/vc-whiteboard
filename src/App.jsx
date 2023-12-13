@@ -36,7 +36,7 @@ export default function App() {
 
     useEffect(() => {
         const video = document.createElement("video")
-        video.style.position = 'absolute'
+        video.style.position = 'fixed'
         video.style.top = 0
         video.style.right = 0
         // video.style.visibility = 'hidden'
@@ -45,7 +45,8 @@ export default function App() {
         video.playsInline = true
         video.width = window.innerWidth
         video.height = window.innerHeight
-        
+        document.body.appendChild(video)
+        video.style.visibility = 'hidden'
         setVideo(video)
     }, [])
 
