@@ -71,29 +71,36 @@ export default function UrlCard({ card }) {
 
     const takeSnapshot = async function () {
 
-        console.log(video)
+        iframeRef.current.style.backgroundColor = "green"
 
-        const width = iframeRef.current.getBoundingClientRect().width
-        const height = iframeRef.current.getBoundingClientRect().height
-        const startX = iframeRef.current.getBoundingClientRect().x;
-        const startY = iframeRef.current.getBoundingClientRect().y;
+        setTimeout(() => {
+            const width = iframeRef.current.getBoundingClientRect().width
+            const height = iframeRef.current.getBoundingClientRect().height
+            const startX = iframeRef.current.getBoundingClientRect().x;
+            const startY = iframeRef.current.getBoundingClientRect().y;
 
-        const canvas = document.createElement("canvas")
-        canvas.style.position = "fixed"
-        canvas.style.bottom = 0
-        canvas.style.left = 0
-        canvas.width = width
-        canvas.height = height
-        const ctx = canvas.getContext('2d')
+            const canvas = document.createElement("canvas")
+            canvas.style.position = "fixed"
+            canvas.style.bottom = 0
+            canvas.style.left = 0
+            canvas.width = width
+            canvas.height = height
+            const ctx = canvas.getContext('2d')
 
+            const p = window.devicePixelRatio
+            const g = 10
+            ctx.drawImage(video, p * (startX + g), p * (startY + g), p * (width - 2 * g), p * (height - 2 * g), 0, 0, width, height)
 
-        ctx.drawImage(video, startX, startY, width, height, startY, startY, width, height)
+            canvas.toBlob((blob) => {
+                const blobUrl = URL.createObjectURL(blob)
+                console.log(blobUrl)
+                download(blobUrl)
+            })
 
-        canvas.toBlob((blob) => {
-            const blobUrl = URL.createObjectURL(blob)
-            console.log(blobUrl)
-            download(blobUrl)
-        })
+            iframeRef.current.style.backgroundColor = ""
+
+        }, 100)
+
     }
 
     return <div
