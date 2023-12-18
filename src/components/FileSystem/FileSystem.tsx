@@ -35,7 +35,7 @@ export default function FileSystem() {
   const handleFolderOnClick = async () => {};
 
   return (
-    <div className="fixed mx-3 my-1 top-16 h-[90%] overflow-auto z-50">
+    <div className="fixed mx-3 my-1 top-16 overflow-auto z-50">
       {!isEmpty(dir) ? (
         <div className="flex gap-2">
           <div
@@ -43,11 +43,7 @@ export default function FileSystem() {
               setIsOpenFileSystem(!isOpenFileSystem);
             }}
             className="p-4 text-xl cursor-pointer"
-            title={
-              isOpenFileSystem
-                ? "close file system"
-                : "open file system"
-            }
+            title={isOpenFileSystem ? "close file system" : "open file system"}
           >
             <VscFiles />
           </div>
